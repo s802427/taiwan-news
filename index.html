@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>台灣國際視野 · 全球新聞情報儀表板</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Space+Mono:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0c10;--surface:#111318;--surface2:#181c24;--border:#252a35;--accent:#e8c547;--accent2:#4a9eff;--text:#e8eaf0;--muted:#6b7280;--dim:#374151;--c1:#e8c547;--c2:#4a9eff;--c3:#a78bfa;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Noto Serif TC',serif;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(232,197,71,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(232,197,71,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+.wrap{max-width:980px;margin:0 auto;padding:0 20px;position:relative;z-index:1;}
+header{border-bottom:1px solid var(--border);padding:22px 0 16px;}
+.hd{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.ey{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--accent);text-transform:uppercase;margin-bottom:4px;}
+h1{font-family:'Cormorant Garamond',serif;font-size:clamp(24px,5vw,42px);font-weight:600;line-height:1.1;}
+h1 em{color:var(--accent);font-style:italic;}
+.hm{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);text-align:right;line-height:1.9;}
+.breaking-bar{background:rgba(255,80,80,.1);border:1px solid rgba(255,80,80,.3);border-left:3px solid #ff5050;padding:10px 15px;margin:14px 0 0;display:flex;align-items:center;gap:10px;border-radius:0 4px 4px 0;}
+.bk-badge{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:2px;color:#ff5050;background:rgba(255,80,80,.15);padding:2px 6px;border-radius:2px;flex-shrink:0;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
+.bk-text{font-family:'Space Mono',monospace;font-size:10px;color:#ff9090;}
+.notice{background:rgba(74,158,255,.06);border:1px solid rgba(74,158,255,.2);border-left:3px solid var(--accent2);padding:10px 14px;margin:12px 0;font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;line-height:1.7;}
+.tabs{display:flex;border:1px solid var(--border);border-radius:4px;overflow:hidden;margin:16px 0;}
+.tab{flex:1;padding:11px 8px;background:var(--surface);border:none;cursor:pointer;font-family:'Noto Serif TC',serif;font-size:12px;color:var(--muted);transition:all .2s;border-right:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:6px;}
+.tab:last-child{border-right:none;}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.tab[data-t="0"] .dot{background:var(--c1);}.tab[data-t="1"] .dot{background:var(--c2);}.tab[data-t="2"] .dot{background:var(--c3);}
+.tab[data-t="0"].on{background:rgba(232,197,71,.1);color:var(--c1);border-bottom:2px solid var(--c1);}
+.tab[data-t="1"].on{background:rgba(74,158,255,.1);color:var(--c2);border-bottom:2px solid var(--c2);}
+.tab[data-t="2"].on{background:rgba(167,139,250,.1);color:var(--c3);border-bottom:2px solid var(--c3);}
+.ts-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:11px;border-bottom:1px solid var(--border);}
+.ts-l{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);}
+.live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#4ade80;margin-right:5px;}
+.analysis{background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--accent);padding:16px 20px;margin-bottom:20px;border-radius:0 4px 4px 0;}
+.at{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:9px;}
+.ax{font-size:13px;line-height:1.9;color:#9ca3af;}
+.cs{margin-bottom:26px;display:none;}.cs.on{display:block;}
+.ch{display:flex;align-items:center;gap:11px;padding:12px 16px;border-radius:4px 4px 0 0;border:1px solid var(--border);border-bottom:none;}
+.cn{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;opacity:.22;line-height:1;}
+.cl{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;opacity:.55;margin-bottom:2px;}
+.ct{font-size:14px;font-weight:600;}
+.cs[data-c="0"] .ch{background:rgba(232,197,71,.05);border-color:rgba(232,197,71,.2);}.cs[data-c="0"] .cn,.cs[data-c="0"] .ct{color:var(--c1);}
+.cs[data-c="1"] .ch{background:rgba(74,158,255,.05);border-color:rgba(74,158,255,.2);}.cs[data-c="1"] .cn,.cs[data-c="1"] .ct{color:var(--c2);}
+.cs[data-c="2"] .ch{background:rgba(167,139,250,.05);border-color:rgba(167,139,250,.2);}.cs[data-c="2"] .cn,.cs[data-c="2"] .ct{color:var(--c3);}
+.nl{border:1px solid var(--border);border-top:none;border-radius:0 0 4px 4px;overflow:hidden;}
+.card{border-bottom:1px solid var(--border);}.card:last-child{border-bottom:none;}
+.card-body{padding:17px 19px 12px;position:relative;transition:background .2s;cursor:pointer;}.card-body:hover{background:var(--surface2);}
+.new-tag{position:absolute;top:12px;right:14px;font-family:'Space Mono',monospace;font-size:8px;color:#4ade80;background:rgba(74,222,128,.1);padding:1px 6px;border-radius:2px;letter-spacing:1px;}
+.ct2{display:flex;gap:11px;align-items:flex-start;margin-bottom:7px;}
+.rk{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:3px;flex-shrink:0;margin-top:2px;}
+.cs[data-c="0"] .rk{background:rgba(232,197,71,.12);color:var(--c1);}.cs[data-c="1"] .rk{background:rgba(74,158,255,.12);color:var(--c2);}.cs[data-c="2"] .rk{background:rgba(167,139,250,.12);color:var(--c3);}
+.nt{font-size:14px;font-weight:600;line-height:1.5;flex:1;}
+.ib{height:2px;border-radius:1px;margin:0 0 8px 35px;}
+.cs[data-c="0"] .ib{background:linear-gradient(90deg,var(--c1),transparent);}.cs[data-c="1"] .ib{background:linear-gradient(90deg,var(--c2),transparent);}.cs[data-c="2"] .ib{background:linear-gradient(90deg,var(--c3),transparent);}
+.ns{font-size:13px;line-height:1.85;color:#9ca3af;margin:0 0 10px 35px;}
+.nm{display:flex;gap:8px;margin-left:35px;flex-wrap:wrap;align-items:center;margin-bottom:10px;}
+.mt{font-family:'Space Mono',monospace;font-size:9px;color:var(--dim);}
+.it{font-family:'Space Mono',monospace;font-size:9px;padding:2px 7px;border-radius:8px;}
+.cs[data-c="0"] .it{background:rgba(232,197,71,.1);color:var(--c1);}.cs[data-c="1"] .it{background:rgba(74,158,255,.1);color:var(--c2);}.cs[data-c="2"] .it{background:rgba(167,139,250,.1);color:var(--c3);}
+.toggle-resp{display:flex;align-items:center;gap:7px;margin:4px 0 0 35px;font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);cursor:pointer;width:fit-content;padding:4px 8px;border-radius:3px;border:1px solid var(--border);background:transparent;transition:all .2s;letter-spacing:.5px;}
+.toggle-resp:hover{border-color:var(--muted);color:var(--text);}.toggle-resp.open{color:var(--accent);border-color:rgba(232,197,71,.4);}
+.toggle-arrow{transition:transform .2s;font-size:8px;}.toggle-resp.open .toggle-arrow{transform:rotate(90deg);}
+.resp-panel{display:none;background:rgba(10,12,16,.6);border-top:1px solid var(--border);padding:16px 19px 18px;}.resp-panel.open{display:block;}
+.resp-title{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:14px;}
+.resp-item{display:flex;gap:12px;margin-bottom:14px;}.resp-item:last-child{margin-bottom:0;}
+.resp-flag{flex-shrink:0;margin-top:2px;}
+.resp-who{font-family:'Space Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.5px;margin-bottom:4px;}
+.resp-txt{font-size:12px;line-height:1.8;color:#9ca3af;}
+.resp-who.tw{color:#4ade80;}.resp-who.us{color:#60a5fa;}.resp-who.cn{color:#f87171;}.resp-who.jp{color:#fb923c;}.resp-who.eu{color:#a78bfa;}.resp-who.analyst{color:#e8c547;}.resp-who.other{color:#94a3b8;}
+footer{border-top:1px solid var(--border);padding:16px 0;margin-top:36px;text-align:center;}
+.ft{font-family:'Space Mono',monospace;font-size:9px;color:var(--dim);line-height:2.1;}
+@media(max-width:540px){.tabs{flex-direction:column;}.tab{border-right:none;border-bottom:1px solid var(--border);}.tab:last-child{border-bottom:none;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<div class="hd">
+<div><div class="ey">GLOBAL INTELLIGENCE MONITOR</div><h1>台灣<em>國際視野</em></h1></div>
+<div class="hm">全球多語言新聞情報<br>排除台灣本地及繁體中文來源<br>2026年04月01日</div>
+</div>
+<div class="breaking-bar"><span class="bk-badge">TODAY</span><span class="bk-text">美國國家情報總監辦公室(ODNI)發布2026年威脅評估報告，評估中國2027年不太可能入侵台灣；台灣因喀麥隆簽證爭議首度缺席WTO部長級會議；中國對與台灣關係密切的日本議員古屋圭司實施制裁。</span></div>
+</header>
+<div class="notice">⚠ 資料範圍：過去48小時 · 排除所有繁體中文來源 · 每日台灣時間08:00自動更新</div>
+<div class="tabs">
+<button class="tab on" data-t="0"><span class="dot"></span>全球對台政策</button>
+<button class="tab" data-t="1"><span class="dot"></span>國際評論台灣</button>
+<button class="tab" data-t="2"><span class="dot"></span>台灣國際角色</button>
+</div>
+<div class="ts-bar"><div class="ts-l"><span class="live-dot"></span>自動更新：2026年04月01日 · 18則精選 · 含各方回應</div></div>
+<div class="analysis"><div class="at">// 總體情勢分析（2026年04月01日）</div><div class="ax">過去48小時至一週內，全球對台關注焦點集中在三大議題：一、美國情報社群評估中國2027年不太可能入侵台灣，但脅迫行動將持續；二、台灣因喀麥隆在WTO會議簽證文件上將其標註為「中國台灣省」而首度缺席WTO部長級會議，引發國際關注；三、日本首相高市早苗關於台海「存亡危機」言論持續引發中日外交摩擦，中國對日本議員實施制裁。此外，美台半導體貿易協議與5000億美元投資承諾成為經貿焦點。</div></div>
+<div id="nb"></div>
+<footer><div class="ft">台灣國際視野 · 2026年04月01日<br>每日台灣時間上午8:00自動更新 · 僅供參考，不代表任何政治立場</div></footer>
+</div>
+<script>
+const FLAG={tw:'🟢',us:'🔵',cn:'🔴',jp:'🟠',eu:'🟣',analyst:'🟡',other:'⚪'};
+const D=[{"id": 0, "theme": "全球對台政策", "news": [{"rank": 1, "isNew": true, "title": "美國情報評估：中國2027年不太可能入侵台灣", "sum": "ODNI 2026年威脅評估報告指出，中國偏好非武力統一，認知兩棲作戰難度高且失敗風險大，尤其若美國介入。中國軍隊仍在穩定但不均衡地發展奪台及阻止美軍介入的能力。", "src": "CNN", "sc": "美國", "lang": "英語", "imp": 10, "why": "美國官方情報評估對全球台海政策走向具指標性影響，緩解2027年戰爭迫近的擔憂", "date": "2026-03-19", "responses": [{"side": "us", "who": "美國國家情報總監辦公室", "txt": "北京幾乎肯定會考慮多項因素決定是否以軍事方式統一，包括解放軍準備程度、台灣政治動態、美國是否軍事介入"}, {"side": "cn", "who": "中國外交部發言人林劍", "txt": "促美方停止炒作「中國威脅論」，如何解決台灣問題完全是中國人自己的事"}]}, {"rank": 2, "isNew": true, "title": "川普政府與台灣簽署歷史性半導體貿易協議", "sum": "美台簽署5000億美元投資協議，台灣企業承諾至少2500億美元直接投資美國半導體產能，另提供2500億美元信貸擔保。美方將對台關稅從20%降至15%。", "src": "美國商務部", "sc": "美國", "lang": "英語", "imp": 9, "why": "史上最大規模美台經貿協議，將重塑全球半導體供應鏈格局", "date": "2026-01-15", "responses": [{"side": "us", "who": "商務部長盧特尼克", "txt": "目標是將台灣40%的半導體供應鏈轉移至美國"}, {"side": "tw", "who": "台灣副總統鄭麗君", "txt": "將40%或50%產能移至美國是不可能的，台灣半導體生態系無法遷移"}]}, {"rank": 3, "isNew": true, "title": "中國2026年國防預算增至2780億美元，對台措辭更強硬", "sum": "中國兩會期間宣布2026年國防預算約2780億美元，較2025年增加7%。政府工作報告將「反對台獨」改為「打擊台獨」，措辭明顯強化。", "src": "AEI / CFR", "sc": "美國", "lang": "英語", "imp": 9, "why": "中國對台政策措辭升級，顯示北京對賴清德政府的強硬立場", "date": "2026-03-13", "responses": [{"side": "cn", "who": "中國國務院", "txt": "2026年工作報告將「反對台獨」改為「打擊台獨」，反映對「分裂主義」總統的更強硬態度"}]}, {"rank": 4, "isNew": true, "title": "川普延遲對台軍售以確保習近平會面順利", "sum": "《紐約時報》報導，川普延遲數十億美元對台軍售，以確保訪華會談成功。白宮指示各機構在川習會前暫緩推進軍售案。", "src": "紐約時報（經AEI引用）", "sc": "美國", "lang": "英語", "imp": 8, "why": "顯示台灣在美中談判中可能被當作籌碼的風險", "date": "2026-03-01", "responses": [{"side": "cn", "who": "習近平", "txt": "在電話中敦促美方以「最謹慎」態度處理對台軍售，北京絕不允許台灣「分裂」出去"}, {"side": "us", "who": "美國國務院", "txt": "本屆政府已非常明確，美國對台承諾持續不變"}]}, {"rank": 5, "isNew": false, "title": "美國支持台海和平穩定，反對單方面改變現狀", "sum": "美國國務院發表聲明，回應中國在台灣附近的軍事演習，敦促北京克制、停止對台軍事施壓，轉而進行有意義對話。", "src": "美國國務院", "sc": "美國", "lang": "英語", "imp": 8, "why": "美國官方對台海政策的最新表態", "date": "2026-01-01", "responses": [{"side": "us", "who": "國務院副發言人畢乾德", "txt": "中國對台灣及區域的軍事活動和言論不必要地加劇緊張"}]}, {"rank": 6, "isNew": true, "title": "中國利用伊朗衝突推進對台議程", "sum": "中國在伊朗衝突前囤積石油，利用全球石油短缺對鄰國進行經濟脅迫。台辦發言人暗示若台灣同意「和平統一」可獲得能源保障。", "src": "AEI", "sc": "美國", "lang": "英語", "imp": 7, "why": "顯示中國利用中東危機作為對台施壓的新工具", "date": "2026-03-20", "responses": [{"side": "cn", "who": "國台辦發言人陳斌華", "txt": "若台灣同意「和平統一」，中國願提供能源保障"}]}]}, {"id": 1, "theme": "全球對台灣事務的評論", "news": [{"rank": 1, "isNew": true, "title": "日本首相高市早苗台海言論引發中日外交危機持續", "sum": "高市早苗稱中國攻台可能構成日本「存亡危機」，引發中國強烈反彈。中國外長王毅稱這是80年來日本首相首次發表此類言論，直接違反中國領土主權。美國情報評估認為這代表日本政策的「重大轉變」。", "src": "Foreign Policy / Japan Times", "sc": "日本/美國", "lang": "英語", "imp": 10, "why": "日本對台政策可能轉變，將根本改變台海軍事平衡與區域安全格局", "date": "2026-03-18", "responses": [{"side": "jp", "who": "日本內閣官房長官木原稔", "txt": "重大政策轉變並非正在發生的事，東京的立場相當一致"}, {"side": "cn", "who": "外交部發言人林劍", "txt": "高市的言論激起中國人民憤怒，試探戰後國際秩序的紅線"}]}, {"rank": 2, "isNew": true, "title": "中國制裁日本議員古屋圭司因其台灣關係", "sum": "中國宣布制裁與首相高市早苗關係密切的日本議員古屋圭司，指控他「勾結台獨分裂勢力」。制裁包括禁止入境中國大陸、香港和澳門。", "src": "Washington Times / AP", "sc": "美國", "lang": "英語", "imp": 9, "why": "顯示中國升級對支持台灣的外國政治人物的懲罰措施", "date": "2026-03-30", "responses": [{"side": "jp", "who": "日本內閣官房副長官尾崎正直", "txt": "中國彷彿要恐嚇持不同意見者的單方面行動絕對不可接受"}, {"side": "cn", "who": "外交部發言人毛寧", "txt": "台灣問題是中國核心利益中的核心，是絕不可逾越的紅線"}]}, {"rank": 3, "isNew": true, "title": "《外交事務》分析：2026年可能是台灣的「完美風暴」", "sum": "分析指出中國政策圈越來越相信統一行動將會發生，若台灣做出挑釁北京的行為，甚至可能迫在眉睫。主要驅動因素是美國政治及川普對軍事保台興趣不大的認知。", "src": "Foreign Affairs", "sc": "美國", "lang": "英語", "imp": 8, "why": "權威外交政策期刊對台海局勢的重要戰略分析", "date": "2026-02-02", "responses": [{"side": "analysis", "who": "Foreign Affairs分析", "txt": "這次有所不同：這次中國真的相信統一將會發生"}]}, {"rank": 4, "isNew": false, "title": "半島電視台刊登中國駐卡達大使文章：美國對台軍售威脅台海和平", "sum": "中國駐卡達大使投書指美國2025年12月宣布的大規模對台軍售嚴重違反一中原則和中美三個聯合公報，侵犯中國主權。", "src": "Al Jazeera", "sc": "卡達", "lang": "英語/阿拉伯語", "imp": 7, "why": "中國透過中東媒體向國際社會傳達其台灣立場", "date": "2026-01-08", "responses": [{"side": "cn", "who": "中國駐卡達大使", "txt": "外部勢力試圖武裝台灣以遏制中國，只會壯大分裂勢力，將台海推向武裝衝突邊緣"}]}, {"rank": 5, "isNew": true, "title": "中國對台認知戰：無人機偽裝信號與選舉干預", "sum": "路透社報導中國長航時無人機在南海執行任務時傳送假轉發器信號偽裝身份。研究機構指中國正蒐集資料準備影響台灣2026、2028年選舉。", "src": "Reuters / AEI", "sc": "英國/美國", "lang": "英語", "imp": 7, "why": "揭示中國對台灣進行的非軍事脅迫手段", "date": "2026-03-27", "responses": [{"side": "research", "who": "台灣DoubleThink Labs", "txt": "中國正在蒐集資料，可能用於影響台灣即將到來的地方和總統選舉輿論"}]}, {"rank": 6, "isNew": true, "title": "Eurasia Group分析師：中國軍方清洗使入侵選項擱置至少兩年", "sum": "政治風險諮詢公司Eurasia Group中國總監分析指出，中國領導層在清洗軍方高層後，實際上已擱置入侵選項至少兩年，因入侵可能破壞國家發展這一最高優先目標。", "src": "CNN", "sc": "美國", "lang": "英語", "imp": 7, "why": "權威政治風險分析機構對中國短期內不會武統的評估", "date": "2026-03-19", "responses": [{"side": "analysis", "who": "Amanda Hsiao, Eurasia Group中國總監", "txt": "北京繼續認為入侵成本過高，因為可能破壞國家發展這一最高優先目標"}]}]}, {"id": 2, "theme": "台灣在國際舞台上的角色", "news": [{"rank": 1, "isNew": true, "title": "台灣首度缺席WTO部長級會議，因喀麥隆將其標註為「中國台灣省」", "sum": "台灣外交部宣布因喀麥隆在簽證文件上將台灣代表團標註為「中國台灣省」，將首度缺席WTO部長級會議。後續補發文件仍錯誤百出，包括拼錯名字、幾乎所有人被標為女性。", "src": "Bloomberg / Reuters / Africanews", "sc": "美國/英國/非洲", "lang": "英語/法語", "imp": 10, "why": "台灣25年來首度缺席WTO會議，凸顯中國壓縮台灣國際空間的升級行動", "date": "2026-03-27", "responses": [{"side": "tw", "who": "台灣外交部", "txt": "這顯示喀麥隆處理此事草率且缺乏誠意"}, {"side": "cn", "who": "外交部發言人林劍", "txt": "民進黨當局卑劣地以參加WTO會議為藉口進行政治操弄，服務其「台獨」議程"}, {"side": "us", "who": "美國國會議員", "txt": "台灣被迫缺席WTO最高決策論壇，削弱WTO應對全球貿易挑戰的集體能力"}]}, {"rank": 2, "isNew": true, "title": "台灣2026年1月出口激增70%創紀錄，美國首超中國成最大出口市場", "sum": "台灣2026年1月出口年增69.9%至657.7億美元創歷史新高。對美出口激增151.8%至212.8億美元，美國首度超越中國成為台灣最大出口市場。MSCI新興市場指數中台灣權重近20年來首超中國。", "src": "Financial Markets / CNBC", "sc": "美國", "lang": "英語", "imp": 9, "why": "台灣在全球AI晶片供應鏈中的關鍵地位獲得市場確認", "date": "2026-02-09", "responses": [{"side": "analysis", "who": "市場分析", "txt": "台灣創紀錄的出口開局確認AI革命正從「炒作」階段進入大規模工業建設階段"}]}, {"rank": 3, "isNew": true, "title": "台灣海巡署強化反封鎖能力，與美日菲加強合作", "sum": "面對中國加強海警部署和封鎖演練，台灣海巡署正提升能力、與軍方密切訓練，並加強與美國、日本、菲律賓海巡單位的合作。", "src": "Japan Times / Reuters", "sc": "日本", "lang": "英語", "imp": 8, "why": "台灣積極準備應對中國可能的封鎖行動", "date": "2026-03-16", "responses": [{"side": "tw", "who": "海洋委員會副主委宋承恩", "txt": "我們必須充分認識北京實施全面封鎖的能力，毫無疑問他們正在演練包圍台灣"}]}, {"rank": 4, "isNew": true, "title": "中國在拉美對台灣發動政治戰", "sum": "FPRI報告指出中國在拉丁美洲進行獨特形式的政治戰，目標包括外交孤立台灣和挑戰美國在西半球利益。中國駐巴拿馬大使曾發威脅訊息給準備訪台的國會議員。", "src": "FPRI (外交政策研究所)", "sc": "美國", "lang": "英語", "imp": 7, "why": "揭示中國在全球壓縮台灣外交空間的系統性行動", "date": "2026-03-18", "responses": [{"side": "cn", "who": "中國駐巴拿馬大使", "txt": "向準備訪台的巴拿馬國會議員發送威脅性WhatsApp訊息，要求取消行程"}]}, {"rank": 5, "isNew": true, "title": "美國海軍P-8A偵察機穿越台灣海峽，2026年首次公開報導", "sum": "美國海軍P-8A海神偵察機3月11日穿越台灣海峽國際空域，這是2026年首次公開報導的美軍空中穿越台海行動，展示美國對「自由開放印太」的承諾。", "src": "AEI / 美國第七艦隊", "sc": "美國", "lang": "英語", "imp": 7, "why": "美軍持續在台海維護航行自由的象徵性行動", "date": "2026-03-20", "responses": [{"side": "us", "who": "美國第七艦隊發言人Matthew Comer", "txt": "此行動展示美國對自由開放印太的承諾"}]}, {"rank": 6, "isNew": true, "title": "台灣矽盾效應：分析師稱供應鏈無法一夜轉移", "sum": "儘管美國推動將40%台灣半導體產能轉移至美國，分析師普遍認為不可行。台灣生產全球90%最先進晶片，其工程人才和生產能力「在其他任何地方都無法大規模複製」。", "src": "CNBC / The Register", "sc": "美國/英國", "lang": "英語", "imp": 8, "why": "確認台灣在全球科技供應鏈中不可替代的戰略地位", "date": "2026-02-10", "responses": [{"side": "analysis", "who": "CSIS資深顧問William Reinsch", "txt": "台灣在半導體供應鏈的工程人才管道和生產能力，尤其是先進製造，在其他任何地方都無法大規模複製"}, {"side": "analysis", "who": "SemiAnalysis分析師", "txt": "台灣的矽盾將持續到十年末，全球最關鍵的先進產能仍集中在島上"}]}]}];
+function render(){
+const nb=document.getElementById('nb');
+nb.innerHTML='';
+D.forEach(cat=>{
+const s=document.createElement('div');
+s.className='cs'+(cat.id===0?' on':'');
+s.dataset.c=cat.id;
+const cards=(cat.news||[]).map((n,i)=>{
+const resp=(n.responses||[]).map(r=>`<div class="resp-item"><div class="resp-flag">${FLAG[r.side]||'⚪'}</div><div><div class="resp-who ${r.side}">${r.who}</div><div class="resp-txt">${r.txt}</div></div></div>`).join('');
+return `<div class="card"><div class="card-body" onclick="toggleResp(this)">${n.isNew?'<span class="new-tag">TODAY</span>':''}<div class="ct2"><div class="rk">#${n.rank||i+1}</div><div class="nt">${n.title}</div></div><div class="ib" style="width:${(n.imp||5)*10}%"></div><div class="ns">${n.sum}</div><div class="nm"><span class="mt">📰 ${n.src}</span><span class="mt">· ${n.sc}</span><span class="mt">· ${n.date}</span><span class="it">重要性 ${n.imp}/10 · ${n.why}</span></div><button class="toggle-resp" onclick="event.stopPropagation();toggleResp(this.closest('.card-body'))"><span class="toggle-arrow">▶</span> 各方回應 (${(n.responses||[]).length})</button></div><div class="resp-panel"><div class="resp-title">// 各方回應</div>${resp}</div></div>`;
+}).join('');
+s.innerHTML=`<div class="ch"><div class="cn">0${cat.id+1}</div><div><div class="cl">主題 ${cat.id+1}</div><div class="ct">${cat.theme}</div></div></div><div class="nl">${cards}</div>`;
+nb.appendChild(s);
+});
+}
+function toggleResp(body){
+const btn=body.querySelector('.toggle-resp');
+const panel=body.nextElementSibling;
+const isOpen=panel.classList.contains('open');
+panel.classList.toggle('open',!isOpen);
+btn.classList.toggle('open',!isOpen);
+}
+document.querySelectorAll('.tab').forEach(b=>{
+b.addEventListener('click',()=>{
+document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+b.classList.add('on');
+const t=parseInt(b.dataset.t);
+document.querySelectorAll('.cs').forEach(s=>{s.classList.toggle('on',parseInt(s.dataset.c)===t);});
+});
+});
+render();
+</script>
+</body>
+</html>
