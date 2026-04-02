@@ -3,6 +3,7 @@ import json
 import os
 import sys
 from datetime import datetime, timezone, timedelta
+from pathlib import Path
 
 TW = timezone(timedelta(hours=8))
 client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
@@ -24,17 +25,17 @@ def fetch_news():
 3. 台灣在國際舞台上的角色（科技/外交/軍事/文化參與）
 
 嚴格規則：
-- 只引用真實存在的非台灣媒體報導（Reuters、BBC、NYT、Le Monde、Al Jazeera、Yomiuri、AP、Financial Times、The Diplomat、AEI、ISW等）
+- 只引用真實存在的非台灣媒體報導
 - 每則新聞必須提供真實的原文網址（url欄位）
 - 不引用繁體中文原始來源
 - 不重複同一事件
 - 每主題6則，依重要程度排序
-- 重要程度1-10分，標準要嚴格：10分=改變台海局勢，7分=重要外交軍事進展，5分=一般政策聲明
-- 摘要必須包含具體數字、人名、機構名稱，不能空泛
+- 重要程度1-10分
+- 摘要必須包含具體數字、人名、機構名稱
 - 各方回應必須引用真實人物的真實發言
 
 請只回傳純JSON：
-{{"date":"{today}","overallAnalysis":"總體分析120字以內，包含最重要的具體事件","breakingNews":"今日最重要一句話，必須包含具體事件","categories":[{{"id":0,"theme":"全球對台政策","news":[{{"rank":1,"isNew":true,"title":"標題（繁體中文，具體說明事件）","sum":"摘要100-150字，必須包含具體人名、機構、數字、日期","src":"來源媒體名稱","sc":"來源國家","lang":"原文語言","url":"原文網址（必填，真實存在的網址）","imp":9,"why":"重要性說明20字內","date":"發布日期","responses":[{{"side":"us","who":"具體人名或機構","txt":"具體回應內容，引用真實發言"}},{{"side":"cn","who":"具體人名或機構","txt":"具體回應內容"}},{{"side":"analyst","who":"具體分析師姓名/智庫名稱","txt":"具體分析內容"}}]}}]}},{{"id":1,"theme":"全球對台灣事務的評論","news":[]}},{{"id":2,"theme":"台灣在國際舞台上的角色","news":[]}}]}}
+{{"date":"{today}","overallAnalysis":"總體分析120字以內","breakingNews":"今日最重要一句話","categories":[{{"id":0,"theme":"全球對台政策","news":[{{"rank":1,"isNew":true,"title":"標題（繁體中文）","sum":"摘要100-150字","src":"來源媒體","sc":"來源國家","lang":"原文語言","url":"原文網址","imp":9,"why":"重要性說明20字內","date":"發布日期","responses":[{{"side":"us","who":"人名/機構","txt":"回應內容"}},{{"side":"cn","who":"人名/機構","txt":"回應內容"}},{{"side":"analyst","who":"分析師/智庫","txt":"分析內容"}}]}}]}},{{"id":1,"theme":"全球對台灣事務的評論","news":[]}},{{"id":2,"theme":"台灣在國際舞台上的角色","news":[]}}]}}
 
 side只能用：tw、us、cn、jp、eu、analyst、other
 如果某主題24小時內真的沒有足夠新聞，寧可少於6則也不要捏造"""
@@ -64,12 +65,55 @@ side只能用：tw、us、cn、jp、eu、analyst、other
             tool_results.append({"type": "tool_result", "tool_use_id": tu.id, "content": content})
         messages.append({"role": "user", "content": tool_results})
     return None
-def generate_html(data):
+
+
+def save_archive(data, date_str):
+    """儲存當天資料到 news/ 資料夾"""
+    Path("news").mkdir(exist_ok=True)
+    filepath = f"news/{date_str}.json"
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    print(f"已儲存存檔：{filepath}")
+
+
+def get_available_dates():
+    """取得所有可用的歷史日期"""
+    news_dir = Path("news")
+    if not news_dir.exists():
+        return []
+    files = sorted(news_dir.glob("*.json"), reverse=True)
+    dates = []
+    for f in files[:30]:  # 最多保留30天
+        date_str = f.stem
+        dates.append(date_str)
+    return dates
+
+
+def load_archive(date_str):
+    """讀取指定日期的存檔"""
+    filepath = f"news/{date_str}.json"
+    if os.path.exists(filepath):
+        with open(filepath, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return None
+def generate_html(data, available_dates):
     today = data.get("date", datetime.now(TW).strftime("%Y年%m月%d日"))
     breaking = data.get("breakingNews", "")
     analysis = data.get("overallAnalysis", "")
     categories = data.get("categories", [])
     data_json = json.dumps(categories, ensure_ascii=False)
+    current_date_str = datetime.now(TW).strftime("%Y-%m-%d")
+
+    # 生成日期選擇器選項
+    date_options = ""
+    for d in available_dates:
+        try:
+            dt = datetime.strptime(d, "%Y-%m-%d")
+            label = dt.strftime("%m/%d")
+            selected = 'selected' if d == current_date_str else ''
+            date_options += f'<option value="{d}" {selected}>{label}</option>\n'
+        except:
+            pass
 
     html = f"""<!DOCTYPE html>
 <html lang="zh-Hant">
@@ -95,6 +139,16 @@ h1 em{{color:var(--accent);font-style:italic;}}
 @keyframes pulse{{0%,100%{{opacity:1;}}50%{{opacity:.5;}}}}
 .bk-text{{font-family:'Space Mono',monospace;font-size:10px;color:#ff9090;}}
 .notice{{background:rgba(74,158,255,.06);border:1px solid rgba(74,158,255,.2);border-left:3px solid var(--accent2);padding:10px 14px;margin:12px 0;font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;line-height:1.7;}}
+.archive-bar{{display:flex;align-items:center;gap:12px;padding:12px 0;margin-bottom:4px;border-bottom:1px solid var(--border);flex-wrap:wrap;}}
+.archive-label{{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;white-space:nowrap;}}
+.date-select{{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 10px;font-family:'Space Mono',monospace;font-size:11px;border-radius:3px;cursor:pointer;outline:none;}}
+.date-select:focus{{border-color:var(--accent);}}
+.date-btns{{display:flex;gap:6px;}}
+.date-btn{{background:transparent;border:1px solid var(--border);color:var(--muted);padding:6px 12px;font-family:'Space Mono',monospace;font-size:10px;border-radius:3px;cursor:pointer;transition:all .2s;white-space:nowrap;}}
+.date-btn:hover{{border-color:var(--accent);color:var(--accent);}}
+.date-btn.active{{background:rgba(232,197,71,.1);border-color:var(--accent);color:var(--accent);}}
+.loading-bar{{display:none;text-align:center;padding:40px;font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);}}
+.loading-bar.on{{display:block;}}
 .tabs{{display:flex;border:1px solid var(--border);border-radius:4px;overflow:hidden;margin:16px 0;}}
 .tab{{flex:1;padding:11px 8px;background:var(--surface);border:none;cursor:pointer;font-family:'Noto Serif TC',serif;font-size:12px;color:var(--muted);transition:all .2s;border-right:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:6px;}}
 .tab:last-child{{border-right:none;}}
@@ -154,11 +208,12 @@ footer{{border-top:1px solid var(--border);padding:16px 0;margin-top:36px;text-a
   .ns{{font-size:13px;}}
   .card-body{{padding:16px 15px 12px;}}
   .rk{{min-width:28px;height:28px;font-size:11px;}}
-  .nm{{gap:6px;}}
   .src-link{{font-size:10px;padding:5px 10px;}}
   .toggle-resp{{font-size:10px;padding:6px 10px;}}
   .resp-txt{{font-size:13px;}}
   h1{{font-size:32px;}}
+  .archive-bar{{gap:8px;}}
+  .date-btn{{padding:6px 8px;font-size:9px;}}
 }}
 </style>
 </head>
@@ -169,54 +224,123 @@ footer{{border-top:1px solid var(--border);padding:16px 0;margin-top:36px;text-a
 <div><div class="ey">GLOBAL INTELLIGENCE MONITOR</div><h1>台灣<em>國際視野</em></h1></div>
 <div class="hm">全球多語言新聞情報<br>排除台灣本地及繁體中文來源<br>{today}</div>
 </div>
-<div class="breaking-bar"><span class="bk-badge">TODAY</span><span class="bk-text">{breaking}</span></div>
+<div class="breaking-bar"><span class="bk-badge">TODAY</span><span class="bk-text" id="breakingText">{breaking}</span></div>
 </header>
 <div class="notice">⚠ 資料範圍：過去24小時 · 排除所有繁體中文來源 · 每日台灣時間07:00自動更新 · 點擊「閱讀原文」可查看來源</div>
+
+<div class="archive-bar">
+  <span class="archive-label">📅 歷史存檔</span>
+  <div class="date-btns" id="dateBtns"></div>
+  <select class="date-select" id="dateSelect" onchange="loadDate(this.value)">
+    {date_options}
+  </select>
+</div>
+
+<div class="loading-bar" id="loadingBar">載入中...</div>
+
+<div id="mainContent">
 <div class="tabs">
 <button class="tab on" data-t="0"><span class="dot"></span>全球對台政策</button>
 <button class="tab" data-t="1"><span class="dot"></span>國際評論台灣</button>
 <button class="tab" data-t="2"><span class="dot"></span>台灣國際角色</button>
 </div>
-<div class="ts-bar"><div class="ts-l"><span class="live-dot"></span>自動更新：{today} · 過去24小時 · 含原文連結 · 含各方回應</div></div>
-<div class="analysis"><div class="at">// 總體情勢分析（{today}）</div><div class="ax">{analysis}</div></div>
+<div class="ts-bar"><div class="ts-l"><span class="live-dot"></span>自動更新：<span id="dateLabel">{today}</span> · 過去24小時 · 含原文連結 · 含各方回應</div></div>
+<div class="analysis"><div class="at">// 總體情勢分析</div><div class="ax" id="analysisText">{analysis}</div></div>
 <div id="nb"></div>
+</div>
+
 <footer><div class="ft">台灣國際視野 · {today}<br>每日台灣時間早上07:00自動更新 · 僅供參考，不代表任何政治立場</div></footer>
 </div>
+
 <script>
 const FLAG={{tw:'🟢',us:'🔵',cn:'🔴',jp:'🟠',eu:'🟣',analyst:'🟡',other:'⚪'}};
-const D={data_json};
-function render(){{
-const nb=document.getElementById('nb');
-nb.innerHTML='';
-D.forEach(cat=>{{
-const s=document.createElement('div');
-s.className='cs'+(cat.id===0?' on':'');
-s.dataset.c=cat.id;
-const cards=(cat.news||[]).map((n,i)=>{{
-const resp=(n.responses||[]).map(r=>`<div class="resp-item"><div class="resp-flag">${{FLAG[r.side]||'⚪'}}</div><div><div class="resp-who ${{r.side}}">${{r.who}}</div><div class="resp-txt">${{r.txt}}</div></div></div>`).join('');
-const srcLink=n.url?`<a class="src-link" href="${{n.url}}" target="_blank" rel="noopener">🔗 閱讀原文</a>`:'';
-return `<div class="card"><div class="card-body" onclick="toggleResp(this)">${{n.isNew?'<span class="new-tag">TODAY</span>':''}}<div class="ct2"><div class="rk">#${{n.rank||i+1}}</div><div class="nt">${{n.title}}</div></div><div class="ib" style="width:${{(n.imp||5)*10}}%"></div><div class="ns">${{n.sum}}</div><div class="nm"><span class="mt">📰 ${{n.src}}</span><span class="mt">· ${{n.sc}}</span><span class="mt">· ${{n.date}}</span><span class="it">重要性 ${{n.imp}}/10 · ${{n.why}}</span></div>${{srcLink}}<button class="toggle-resp" onclick="event.stopPropagation();toggleResp(this.closest('.card-body'))"><span class="toggle-arrow">▶</span> 各方回應 (${{(n.responses||[]).length}})</button></div><div class="resp-panel"><div class="resp-title">// 各方回應</div>${{resp}}</div></div>`;
-}}).join('');
-s.innerHTML=`<div class="ch"><div class="cn">0${{cat.id+1}}</div><div><div class="cl">主題 ${{cat.id+1}}</div><div class="ct">${{cat.theme}}</div></div></div><div class="nl">${{cards}}</div>`;
-nb.appendChild(s);
-}});
+const TODAY_DATA={data_json};
+const TODAY_DATE='{current_date_str}';
+const AVAILABLE_DATES={json.dumps(available_dates)};
+
+let currentTab=0;
+
+function renderNews(categories){{
+  const nb=document.getElementById('nb');
+  nb.innerHTML='';
+  categories.forEach(cat=>{{
+    const s=document.createElement('div');
+    s.className='cs'+(cat.id===currentTab?' on':'');
+    s.dataset.c=cat.id;
+    const cards=(cat.news||[]).map((n,i)=>{{
+      const resp=(n.responses||[]).map(r=>`<div class="resp-item"><div class="resp-flag">${{FLAG[r.side]||'⚪'}}</div><div><div class="resp-who ${{r.side}}">${{r.who}}</div><div class="resp-txt">${{r.txt}}</div></div></div>`).join('');
+      const srcLink=n.url?`<a class="src-link" href="${{n.url}}" target="_blank" rel="noopener">🔗 閱讀原文</a>`:'';
+      return `<div class="card"><div class="card-body" onclick="toggleResp(this)">${{n.isNew?'<span class="new-tag">TODAY</span>':''}}<div class="ct2"><div class="rk">#${{n.rank||i+1}}</div><div class="nt">${{n.title}}</div></div><div class="ib" style="width:${{(n.imp||5)*10}}%"></div><div class="ns">${{n.sum}}</div><div class="nm"><span class="mt">📰 ${{n.src}}</span><span class="mt">· ${{n.sc}}</span><span class="mt">· ${{n.date}}</span><span class="it">重要性 ${{n.imp}}/10 · ${{n.why}}</span></div>${{srcLink}}<button class="toggle-resp" onclick="event.stopPropagation();toggleResp(this.closest('.card-body'))"><span class="toggle-arrow">▶</span> 各方回應 (${{(n.responses||[]).length}})</button></div><div class="resp-panel"><div class="resp-title">// 各方回應</div>${{resp}}</div></div>`;
+    }}).join('');
+    s.innerHTML=`<div class="ch"><div class="cn">0${{cat.id+1}}</div><div><div class="cl">主題 ${{cat.id+1}}</div><div class="ct">${{cat.theme}}</div></div></div><div class="nl">${{cards}}</div>`;
+    nb.appendChild(s);
+  }});
+  document.querySelectorAll('.tab').forEach(b=>{{
+    b.addEventListener('click',()=>{{
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');
+      currentTab=parseInt(b.dataset.t);
+      document.querySelectorAll('.cs').forEach(s=>{{s.classList.toggle('on',parseInt(s.dataset.c)===currentTab);}});
+    }});
+  }});
 }}
+
+async function loadDate(dateStr){{
+  if(dateStr===TODAY_DATE){{
+    document.getElementById('analysisText').textContent='{analysis}';
+    document.getElementById('dateLabel').textContent='{today}';
+    document.getElementById('breakingText').textContent='{breaking}';
+    renderNews(TODAY_DATA);
+    updateBtns(dateStr);
+    document.getElementById('dateSelect').value=dateStr;
+    return;
+  }}
+  document.getElementById('loadingBar').classList.add('on');
+  document.getElementById('mainContent').style.opacity='0.3';
+  try{{
+    const res=await fetch(`news/${{dateStr}}.json`);
+    if(!res.ok)throw new Error('找不到資料');
+    const data=await res.json();
+    document.getElementById('analysisText').textContent=data.overallAnalysis||'';
+    document.getElementById('dateLabel').textContent=data.date||dateStr;
+    document.getElementById('breakingText').textContent=data.breakingNews||'';
+    renderNews(data.categories||[]);
+    updateBtns(dateStr);
+    document.getElementById('dateSelect').value=dateStr;
+  }}catch(e){{
+    alert('載入失敗：'+e.message);
+  }}finally{{
+    document.getElementById('loadingBar').classList.remove('on');
+    document.getElementById('mainContent').style.opacity='1';
+  }}
+}}
+
+function updateBtns(activeDate){{
+  const container=document.getElementById('dateBtns');
+  container.innerHTML='';
+  const recent=AVAILABLE_DATES.slice(0,5);
+  recent.forEach(d=>{{
+    const btn=document.createElement('button');
+    btn.className='date-btn'+(d===activeDate?' active':'');
+    try{{
+      const dt=new Date(d);
+      btn.textContent=(dt.getMonth()+1)+'/'+(dt.getDate());
+    }}catch{{btn.textContent=d;}}
+    btn.onclick=()=>loadDate(d);
+    container.appendChild(btn);
+  }});
+}}
+
 function toggleResp(body){{
-const btn=body.querySelector('.toggle-resp');
-const panel=body.nextElementSibling;
-const isOpen=panel.classList.contains('open');
-panel.classList.toggle('open',!isOpen);
-btn.classList.toggle('open',!isOpen);
+  const btn=body.querySelector('.toggle-resp');
+  const panel=body.nextElementSibling;
+  const isOpen=panel.classList.contains('open');
+  panel.classList.toggle('open',!isOpen);
+  btn.classList.toggle('open',!isOpen);
 }}
-document.querySelectorAll('.tab').forEach(b=>{{
-b.addEventListener('click',()=>{{
-document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
-b.classList.add('on');
-const t=parseInt(b.dataset.t);
-document.querySelectorAll('.cs').forEach(s=>{{s.classList.toggle('on',parseInt(s.dataset.c)===t);}});
-}});
-}});
-render();
+
+renderNews(TODAY_DATA);
+updateBtns(TODAY_DATE);
 </script>
 </body>
 </html>"""
@@ -255,8 +379,16 @@ def main():
         else:
             sys.exit(1)
 
+    # 儲存今天的存檔
+    date_str = datetime.now(TW).strftime("%Y-%m-%d")
+    save_archive(data, date_str)
+
+    # 取得所有可用日期
+    available_dates = get_available_dates()
+    print(f"可用日期：{available_dates}")
+
     print("生成 HTML...")
-    html = generate_html(data)
+    html = generate_html(data, available_dates)
 
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(html)
