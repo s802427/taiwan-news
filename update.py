@@ -9,26 +9,42 @@ client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
 def fetch_news():
     today = datetime.now(TW).strftime("%Y年%m月%d日")
-    prompt = f"""你是專業國際新聞分析師。今天是{today}，請用網路搜尋過去24小時內，全球非台灣、非繁體中文媒體對台灣的最新國際報導。
+    prompt = f"""你是專業國際新聞分析師。今天是{today}，請用網路搜尋工具多次搜尋，確保找到過去24小時內真實存在的國際新聞。
+
+搜尋策略：
+1. 先搜尋 "Taiwan news today {datetime.now(TW).strftime('%Y %m %d')}"
+2. 再搜尋 "Taiwan China policy {datetime.now(TW).strftime('%B %Y')}"
+3. 再搜尋 "Taiwan military diplomacy latest"
+4. 再搜尋 "Taiwan semiconductor international"
+5. 針對每個主題至少搜尋兩次，確保資料充足
 
 三大主題：
-1. 全球對台政策
-2. 全球對台灣事務的評論
-3. 台灣在國際舞台上的角色
+1. 全球對台政策（各國政府/國際組織的外交軍事經濟政策）
+2. 全球對台灣事務的評論（國際媒體/智庫/學者評論）
+3. 台灣在國際舞台上的角色（科技/外交/軍事/文化參與）
 
-規則：只引用非台灣媒體，不引用繁體中文來源，每主題6則，依重要程度排序，重要程度1-10分。
+嚴格規則：
+- 只引用真實存在的非台灣媒體報導（Reuters、BBC、NYT、Le Monde、Al Jazeera、Yomiuri、AP、Financial Times、The Diplomat、AEI、ISW等）
+- 每則新聞必須提供真實的原文網址（url欄位）
+- 不引用繁體中文原始來源
+- 不重複同一事件
+- 每主題6則，依重要程度排序
+- 重要程度1-10分，標準要嚴格：10分=改變台海局勢，7分=重要外交軍事進展，5分=一般政策聲明
+- 摘要必須包含具體數字、人名、機構名稱，不能空泛
+- 各方回應必須引用真實人物的真實發言
 
 請只回傳純JSON：
-{{"date":"{today}","overallAnalysis":"總體分析","breakingNews":"今日最重要摘要","categories":[{{"id":0,"theme":"全球對台政策","news":[{{"rank":1,"isNew":true,"title":"標題","sum":"摘要","src":"來源","sc":"國家","lang":"語言","imp":9,"why":"重要性","date":"日期","responses":[{{"side":"us","who":"誰","txt":"內容"}},{{"side":"cn","who":"誰","txt":"內容"}},{{"side":"analyst","who":"誰","txt":"內容"}}]}}]}},{{"id":1,"theme":"全球對台灣事務的評論","news":[]}},{{"id":2,"theme":"台灣在國際舞台上的角色","news":[]}}]}}
+{{"date":"{today}","overallAnalysis":"總體分析120字以內，包含最重要的具體事件","breakingNews":"今日最重要一句話，必須包含具體事件","categories":[{{"id":0,"theme":"全球對台政策","news":[{{"rank":1,"isNew":true,"title":"標題（繁體中文，具體說明事件）","sum":"摘要100-150字，必須包含具體人名、機構、數字、日期","src":"來源媒體名稱","sc":"來源國家","lang":"原文語言","url":"原文網址（必填，真實存在的網址）","imp":9,"why":"重要性說明20字內","date":"發布日期","responses":[{{"side":"us","who":"具體人名或機構","txt":"具體回應內容，引用真實發言"}},{{"side":"cn","who":"具體人名或機構","txt":"具體回應內容"}},{{"side":"analyst","who":"具體分析師姓名/智庫名稱","txt":"具體分析內容"}}]}}]}},{{"id":1,"theme":"全球對台灣事務的評論","news":[]}},{{"id":2,"theme":"台灣在國際舞台上的角色","news":[]}}]}}
 
-side只能用：tw、us、cn、jp、eu、analyst、other"""
+side只能用：tw、us、cn、jp、eu、analyst、other
+如果某主題24小時內真的沒有足夠新聞，寧可少於6則也不要捏造"""
 
     messages = [{"role": "user", "content": prompt}]
-    for i in range(10):
+    for i in range(15):
         print(f"第 {i+1} 輪...")
         response = client.messages.create(
             model="claude-opus-4-5",
-            max_tokens=8000,
+            max_tokens=10000,
             tools=[{"type": "web_search_20250305", "name": "web_search"}],
             messages=messages
         )
@@ -54,6 +70,7 @@ def generate_html(data):
     analysis = data.get("overallAnalysis", "")
     categories = data.get("categories", [])
     data_json = json.dumps(categories, ensure_ascii=False)
+
     html = f"""<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -102,7 +119,7 @@ h1 em{{color:var(--accent);font-style:italic;}}
 .cs[data-c="2"] .ch{{background:rgba(167,139,250,.05);border-color:rgba(167,139,250,.2);}}.cs[data-c="2"] .cn,.cs[data-c="2"] .ct{{color:var(--c3);}}
 .nl{{border:1px solid var(--border);border-top:none;border-radius:0 0 4px 4px;overflow:hidden;}}
 .card{{border-bottom:1px solid var(--border);}}.card:last-child{{border-bottom:none;}}
-.card-body{{padding:17px 19px 12px;position:relative;transition:background .2s;cursor:pointer;}}.card-body:hover{{background:var(--surface2);}}
+.card-body{{padding:17px 19px 12px;position:relative;transition:background .2s;}}
 .new-tag{{position:absolute;top:12px;right:14px;font-family:'Space Mono',monospace;font-size:8px;color:#4ade80;background:rgba(74,222,128,.1);padding:1px 6px;border-radius:2px;letter-spacing:1px;}}
 .ct2{{display:flex;gap:11px;align-items:flex-start;margin-bottom:7px;}}
 .rk{{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:3px;flex-shrink:0;margin-top:2px;}}
@@ -110,11 +127,13 @@ h1 em{{color:var(--accent);font-style:italic;}}
 .nt{{font-size:14px;font-weight:600;line-height:1.5;flex:1;}}
 .ib{{height:2px;border-radius:1px;margin:0 0 8px 35px;}}
 .cs[data-c="0"] .ib{{background:linear-gradient(90deg,var(--c1),transparent);}}.cs[data-c="1"] .ib{{background:linear-gradient(90deg,var(--c2),transparent);}}.cs[data-c="2"] .ib{{background:linear-gradient(90deg,var(--c3),transparent);}}
-.ns{{font-size:13px;line-height:1.85;color:#9ca3af;margin:0 0 10px 35px;}}
-.nm{{display:flex;gap:8px;margin-left:35px;flex-wrap:wrap;align-items:center;margin-bottom:10px;}}
+.ns{{font-size:13px;line-height:1.85;color:#9ca3af;margin:0 0 8px 35px;}}
+.nm{{display:flex;gap:8px;margin-left:35px;flex-wrap:wrap;align-items:center;margin-bottom:8px;}}
 .mt{{font-family:'Space Mono',monospace;font-size:9px;color:var(--dim);}}
 .it{{font-family:'Space Mono',monospace;font-size:9px;padding:2px 7px;border-radius:8px;}}
 .cs[data-c="0"] .it{{background:rgba(232,197,71,.1);color:var(--c1);}}.cs[data-c="1"] .it{{background:rgba(74,158,255,.1);color:var(--c2);}}.cs[data-c="2"] .it{{background:rgba(167,139,250,.1);color:var(--c3);}}
+.src-link{{display:inline-flex;align-items:center;gap:5px;margin-left:35px;margin-bottom:10px;font-family:'Space Mono',monospace;font-size:9px;color:var(--accent2);text-decoration:none;padding:3px 8px;border:1px solid rgba(74,158,255,.3);border-radius:3px;transition:all .2s;}}
+.src-link:hover{{background:rgba(74,158,255,.1);border-color:var(--accent2);}}
 .toggle-resp{{display:flex;align-items:center;gap:7px;margin:4px 0 0 35px;font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);cursor:pointer;width:fit-content;padding:4px 8px;border-radius:3px;border:1px solid var(--border);background:transparent;transition:all .2s;letter-spacing:.5px;}}
 .toggle-resp:hover{{border-color:var(--muted);color:var(--text);}}.toggle-resp.open{{color:var(--accent);border-color:rgba(232,197,71,.4);}}
 .toggle-arrow{{transition:transform .2s;font-size:8px;}}.toggle-resp.open .toggle-arrow{{transform:rotate(90deg);}}
@@ -127,7 +146,20 @@ h1 em{{color:var(--accent);font-style:italic;}}
 .resp-who.tw{{color:#4ade80;}}.resp-who.us{{color:#60a5fa;}}.resp-who.cn{{color:#f87171;}}.resp-who.jp{{color:#fb923c;}}.resp-who.eu{{color:#a78bfa;}}.resp-who.analyst{{color:#e8c547;}}.resp-who.other{{color:#94a3b8;}}
 footer{{border-top:1px solid var(--border);padding:16px 0;margin-top:36px;text-align:center;}}
 .ft{{font-family:'Space Mono',monospace;font-size:9px;color:var(--dim);line-height:2.1;}}
-@media(max-width:540px){{.tabs{{flex-direction:column;}}.tab{{border-right:none;border-bottom:1px solid var(--border);}}.tab:last-child{{border-bottom:none;}}}}
+@media(max-width:600px){{
+  .tabs{{flex-direction:column;}}
+  .tab{{border-right:none;border-bottom:1px solid var(--border);padding:14px;font-size:13px;}}
+  .tab:last-child{{border-bottom:none;}}
+  .nt{{font-size:15px;}}
+  .ns{{font-size:13px;}}
+  .card-body{{padding:16px 15px 12px;}}
+  .rk{{min-width:28px;height:28px;font-size:11px;}}
+  .nm{{gap:6px;}}
+  .src-link{{font-size:10px;padding:5px 10px;}}
+  .toggle-resp{{font-size:10px;padding:6px 10px;}}
+  .resp-txt{{font-size:13px;}}
+  h1{{font-size:32px;}}
+}}
 </style>
 </head>
 <body>
@@ -139,16 +171,16 @@ footer{{border-top:1px solid var(--border);padding:16px 0;margin-top:36px;text-a
 </div>
 <div class="breaking-bar"><span class="bk-badge">TODAY</span><span class="bk-text">{breaking}</span></div>
 </header>
-<div class="notice">⚠ 資料範圍：過去24小時 · 排除所有繁體中文來源 · 每日台灣時間07:00自動更新</div>
+<div class="notice">⚠ 資料範圍：過去24小時 · 排除所有繁體中文來源 · 每日台灣時間07:00自動更新 · 點擊「閱讀原文」可查看來源</div>
 <div class="tabs">
 <button class="tab on" data-t="0"><span class="dot"></span>全球對台政策</button>
 <button class="tab" data-t="1"><span class="dot"></span>國際評論台灣</button>
 <button class="tab" data-t="2"><span class="dot"></span>台灣國際角色</button>
 </div>
-<div class="ts-bar"><div class="ts-l"><span class="live-dot"></span>自動更新：{today} · 過去24小時 · 18則精選 · 含各方回應</div></div>
+<div class="ts-bar"><div class="ts-l"><span class="live-dot"></span>自動更新：{today} · 過去24小時 · 含原文連結 · 含各方回應</div></div>
 <div class="analysis"><div class="at">// 總體情勢分析（{today}）</div><div class="ax">{analysis}</div></div>
 <div id="nb"></div>
-<footer><div class="ft">台灣國際視野 · {today}<br>每日台灣時間早上07:00自動更新 · 僅供參考</div></footer>
+<footer><div class="ft">台灣國際視野 · {today}<br>每日台灣時間早上07:00自動更新 · 僅供參考，不代表任何政治立場</div></footer>
 </div>
 <script>
 const FLAG={{tw:'🟢',us:'🔵',cn:'🔴',jp:'🟠',eu:'🟣',analyst:'🟡',other:'⚪'}};
@@ -162,7 +194,8 @@ s.className='cs'+(cat.id===0?' on':'');
 s.dataset.c=cat.id;
 const cards=(cat.news||[]).map((n,i)=>{{
 const resp=(n.responses||[]).map(r=>`<div class="resp-item"><div class="resp-flag">${{FLAG[r.side]||'⚪'}}</div><div><div class="resp-who ${{r.side}}">${{r.who}}</div><div class="resp-txt">${{r.txt}}</div></div></div>`).join('');
-return `<div class="card"><div class="card-body" onclick="toggleResp(this)">${{n.isNew?'<span class="new-tag">TODAY</span>':''}}<div class="ct2"><div class="rk">#${{n.rank||i+1}}</div><div class="nt">${{n.title}}</div></div><div class="ib" style="width:${{(n.imp||5)*10}}%"></div><div class="ns">${{n.sum}}</div><div class="nm"><span class="mt">📰 ${{n.src}}</span><span class="mt">· ${{n.sc}}</span><span class="mt">· ${{n.date}}</span><span class="it">重要性 ${{n.imp}}/10 · ${{n.why}}</span></div><button class="toggle-resp" onclick="event.stopPropagation();toggleResp(this.closest('.card-body'))"><span class="toggle-arrow">▶</span> 各方回應 (${{(n.responses||[]).length}})</button></div><div class="resp-panel"><div class="resp-title">// 各方回應</div>${{resp}}</div></div>`;
+const srcLink=n.url?`<a class="src-link" href="${{n.url}}" target="_blank" rel="noopener">🔗 閱讀原文</a>`:'';
+return `<div class="card"><div class="card-body" onclick="toggleResp(this)">${{n.isNew?'<span class="new-tag">TODAY</span>':''}}<div class="ct2"><div class="rk">#${{n.rank||i+1}}</div><div class="nt">${{n.title}}</div></div><div class="ib" style="width:${{(n.imp||5)*10}}%"></div><div class="ns">${{n.sum}}</div><div class="nm"><span class="mt">📰 ${{n.src}}</span><span class="mt">· ${{n.sc}}</span><span class="mt">· ${{n.date}}</span><span class="it">重要性 ${{n.imp}}/10 · ${{n.why}}</span></div>${{srcLink}}<button class="toggle-resp" onclick="event.stopPropagation();toggleResp(this.closest('.card-body'))"><span class="toggle-arrow">▶</span> 各方回應 (${{(n.responses||[]).length}})</button></div><div class="resp-panel"><div class="resp-title">// 各方回應</div>${{resp}}</div></div>`;
 }}).join('');
 s.innerHTML=`<div class="ch"><div class="cn">0${{cat.id+1}}</div><div><div class="cl">主題 ${{cat.id+1}}</div><div class="ct">${{cat.theme}}</div></div></div><div class="nl">${{cards}}</div>`;
 nb.appendChild(s);
