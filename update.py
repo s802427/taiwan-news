@@ -2,28 +2,30 @@ import anthropic
 import json
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
+TW = timezone(timedelta(hours=8))
 client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
 def fetch_news():
-    today = datetime.now().strftime("%Y年%m月%d日")
-    prompt = f"""你是專業國際新聞分析師。今天是{today}，請用網路搜尋過去48小時內，全球非台灣、非繁體中文媒體對台灣的最新國際報導。
+    today = datetime.now(TW).strftime("%Y年%m月%d日")
+    prompt = f"""你是專業國際新聞分析師。今天是{today}，請用網路搜尋過去24小時內，全球非台灣、非繁體中文媒體對台灣的最新國際報導。
 
 三大主題：
 1. 全球對台政策
 2. 全球對台灣事務的評論
 3. 台灣在國際舞台上的角色
 
-規則：只引用非台灣媒體，不引用繁體中文來源，每主題6則，依重要程度排序。
+規則：只引用非台灣媒體，不引用繁體中文來源，每主題6則，依重要程度排序，重要程度1-10分。
 
 請只回傳純JSON：
-{{"date":"{today}","overallAnalysis":"總體分析","breakingNews":"今日最重要摘要","categories":[{{"id":0,"theme":"全球對台政策","news":[{{"rank":1,"isNew":true,"title":"標題","sum":"摘要","src":"來源","sc":"國家","lang":"語言","imp":9,"why":"重要性","date":"日期","responses":[{{"side":"us","who":"誰","txt":"內容"}}]}}]}},{{"id":1,"theme":"全球對台灣事務的評論","news":[]}},{{"id":2,"theme":"台灣在國際舞台上的角色","news":[]}}]}}"""
+{{"date":"{today}","overallAnalysis":"總體分析","breakingNews":"今日最重要摘要","categories":[{{"id":0,"theme":"全球對台政策","news":[{{"rank":1,"isNew":true,"title":"標題","sum":"摘要","src":"來源","sc":"國家","lang":"語言","imp":9,"why":"重要性","date":"日期","responses":[{{"side":"us","who":"誰","txt":"內容"}},{{"side":"cn","who":"誰","txt":"內容"}},{{"side":"analyst","who":"誰","txt":"內容"}}]}}]}},{{"id":1,"theme":"全球對台灣事務的評論","news":[]}},{{"id":2,"theme":"台灣在國際舞台上的角色","news":[]}}]}}
+
+side只能用：tw、us、cn、jp、eu、analyst、other"""
 
     messages = [{"role": "user", "content": prompt}]
-    
     for i in range(10):
-        print(f"第 {i+1} 輪 API 呼叫...")
+        print(f"第 {i+1} 輪...")
         response = client.messages.create(
             model="claude-opus-4-5",
             max_tokens=8000,
@@ -31,47 +33,33 @@ def fetch_news():
             messages=messages
         )
         print(f"stop_reason: {response.stop_reason}")
-        
         tool_uses = [b for b in response.content if b.type == "tool_use"]
         text_blocks = [b for b in response.content if b.type == "text"]
-        
         if not tool_uses:
             if text_blocks:
-                print("取得最終回應")
                 return text_blocks[-1].text
-            else:
-                print("無文字回應，結束")
-                break
-        
+            break
         messages.append({"role": "assistant", "content": response.content})
         tool_results = []
         for tu in tool_uses:
             content = getattr(tu, 'content', []) or []
             if isinstance(content, str):
                 content = [{"type": "text", "text": content}]
-            tool_results.append({
-                "type": "tool_result",
-                "tool_use_id": tu.id,
-                "content": content
-            })
+            tool_results.append({"type": "tool_result", "tool_use_id": tu.id, "content": content})
         messages.append({"role": "user", "content": tool_results})
-    
     return None
-
-
 def generate_html(data):
-    today = data.get("date", datetime.now().strftime("%Y年%m月%d日"))
+    today = data.get("date", datetime.now(TW).strftime("%Y年%m月%d日"))
     breaking = data.get("breakingNews", "")
     analysis = data.get("overallAnalysis", "")
     categories = data.get("categories", [])
     data_json = json.dumps(categories, ensure_ascii=False)
-
     html = f"""<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>台灣國際視野 · 全球新聞情報儀表板</title>
+<title>台灣國際視野</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Space+Mono:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <style>
 :root{{--bg:#0a0c10;--surface:#111318;--surface2:#181c24;--border:#252a35;--accent:#e8c547;--accent2:#4a9eff;--text:#e8eaf0;--muted:#6b7280;--dim:#374151;--c1:#e8c547;--c2:#4a9eff;--c3:#a78bfa;}}
@@ -151,16 +139,16 @@ footer{{border-top:1px solid var(--border);padding:16px 0;margin-top:36px;text-a
 </div>
 <div class="breaking-bar"><span class="bk-badge">TODAY</span><span class="bk-text">{breaking}</span></div>
 </header>
-<div class="notice">⚠ 資料範圍：過去48小時 · 排除所有繁體中文來源 · 每日台灣時間08:00自動更新</div>
+<div class="notice">⚠ 資料範圍：過去24小時 · 排除所有繁體中文來源 · 每日台灣時間07:00自動更新</div>
 <div class="tabs">
 <button class="tab on" data-t="0"><span class="dot"></span>全球對台政策</button>
 <button class="tab" data-t="1"><span class="dot"></span>國際評論台灣</button>
 <button class="tab" data-t="2"><span class="dot"></span>台灣國際角色</button>
 </div>
-<div class="ts-bar"><div class="ts-l"><span class="live-dot"></span>自動更新：{today} · 18則精選 · 含各方回應</div></div>
+<div class="ts-bar"><div class="ts-l"><span class="live-dot"></span>自動更新：{today} · 過去24小時 · 18則精選 · 含各方回應</div></div>
 <div class="analysis"><div class="at">// 總體情勢分析（{today}）</div><div class="ax">{analysis}</div></div>
 <div id="nb"></div>
-<footer><div class="ft">台灣國際視野 · {today}<br>每日台灣時間上午8:00自動更新 · 僅供參考，不代表任何政治立場</div></footer>
+<footer><div class="ft">台灣國際視野 · {today}<br>每日台灣時間早上07:00自動更新 · 僅供參考</div></footer>
 </div>
 <script>
 const FLAG={{tw:'🟢',us:'🔵',cn:'🔴',jp:'🟠',eu:'🟣',analyst:'🟡',other:'⚪'}};
@@ -200,8 +188,6 @@ render();
 </body>
 </html>"""
     return html
-
-
 def main():
     print("開始搜尋新聞...")
     raw = fetch_news()
@@ -247,4 +233,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
