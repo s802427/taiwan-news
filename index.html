@@ -22,6 +22,16 @@ h1 em{color:var(--accent);font-style:italic;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
 .bk-text{font-family:'Space Mono',monospace;font-size:10px;color:#ff9090;}
 .notice{background:rgba(74,158,255,.06);border:1px solid rgba(74,158,255,.2);border-left:3px solid var(--accent2);padding:10px 14px;margin:12px 0;font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;line-height:1.7;}
+.archive-bar{display:flex;align-items:center;gap:12px;padding:12px 0;margin-bottom:4px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.archive-label{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;white-space:nowrap;}
+.date-select{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 10px;font-family:'Space Mono',monospace;font-size:11px;border-radius:3px;cursor:pointer;outline:none;}
+.date-select:focus{border-color:var(--accent);}
+.date-btns{display:flex;gap:6px;}
+.date-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:6px 12px;font-family:'Space Mono',monospace;font-size:10px;border-radius:3px;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.date-btn:hover{border-color:var(--accent);color:var(--accent);}
+.date-btn.active{background:rgba(232,197,71,.1);border-color:var(--accent);color:var(--accent);}
+.loading-bar{display:none;text-align:center;padding:40px;font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);}
+.loading-bar.on{display:block;}
 .tabs{display:flex;border:1px solid var(--border);border-radius:4px;overflow:hidden;margin:16px 0;}
 .tab{flex:1;padding:11px 8px;background:var(--surface);border:none;cursor:pointer;font-family:'Noto Serif TC',serif;font-size:12px;color:var(--muted);transition:all .2s;border-right:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:6px;}
 .tab:last-child{border-right:none;}
@@ -81,11 +91,12 @@ footer{border-top:1px solid var(--border);padding:16px 0;margin-top:36px;text-al
   .ns{font-size:13px;}
   .card-body{padding:16px 15px 12px;}
   .rk{min-width:28px;height:28px;font-size:11px;}
-  .nm{gap:6px;}
   .src-link{font-size:10px;padding:5px 10px;}
   .toggle-resp{font-size:10px;padding:6px 10px;}
   .resp-txt{font-size:13px;}
   h1{font-size:32px;}
+  .archive-bar{gap:8px;}
+  .date-btn{padding:6px 8px;font-size:9px;}
 }
 </style>
 </head>
@@ -94,56 +105,126 @@ footer{border-top:1px solid var(--border);padding:16px 0;margin-top:36px;text-al
 <header>
 <div class="hd">
 <div><div class="ey">GLOBAL INTELLIGENCE MONITOR</div><h1>台灣<em>國際視野</em></h1></div>
-<div class="hm">全球多語言新聞情報<br>排除台灣本地及繁體中文來源<br>2026年04月02日</div>
+<div class="hm">全球多語言新聞情報<br>排除台灣本地及繁體中文來源<br>2026年04月03日</div>
 </div>
-<div class="breaking-bar"><span class="bk-badge">TODAY</span><span class="bk-text">國民黨主席鄭麗文接受習近平邀請，將於4月7-12日率團訪問中國大陸，成為2016年以來首位訪中的現任黨主席</span></div>
+<div class="breaking-bar"><span class="bk-badge">TODAY</span><span class="bk-text" id="breakingText">美國情報機構評估：中國無2027年侵台計劃，但解放軍持續增強對台軍事能力</span></div>
 </header>
 <div class="notice">⚠ 資料範圍：過去24小時 · 排除所有繁體中文來源 · 每日台灣時間07:00自動更新 · 點擊「閱讀原文」可查看來源</div>
+
+<div class="archive-bar">
+  <span class="archive-label">📅 歷史存檔</span>
+  <div class="date-btns" id="dateBtns"></div>
+  <select class="date-select" id="dateSelect" onchange="loadDate(this.value)">
+    <option value="2026-04-03" selected>04/03</option>
+
+  </select>
+</div>
+
+<div class="loading-bar" id="loadingBar">載入中...</div>
+
+<div id="mainContent">
 <div class="tabs">
 <button class="tab on" data-t="0"><span class="dot"></span>全球對台政策</button>
 <button class="tab" data-t="1"><span class="dot"></span>國際評論台灣</button>
 <button class="tab" data-t="2"><span class="dot"></span>台灣國際角色</button>
 </div>
-<div class="ts-bar"><div class="ts-l"><span class="live-dot"></span>自動更新：2026年04月02日 · 過去24小時 · 含原文連結 · 含各方回應</div></div>
-<div class="analysis"><div class="at">// 總體情勢分析（2026年04月02日）</div><div class="ax">川普習近平峰會延至五月，國民黨主席鄭麗文將於4月7日訪中會習；中國制裁日本議員古屋圭司，日中關係持續惡化；美國四位參議員訪台力促國防預算通過；ODNI評估中國2027年不會入侵台灣；台灣ETF創三月資金外流紀錄；台積電確認2028年在日本量產3奈米製程。</div></div>
+<div class="ts-bar"><div class="ts-l"><span class="live-dot"></span>自動更新：<span id="dateLabel">2026年04月03日</span> · 過去24小時 · 含原文連結 · 含各方回應</div></div>
+<div class="analysis"><div class="at">// 總體情勢分析</div><div class="ax" id="analysisText">國際對台關注度持續升溫。美國參議員訪台施壓國防預算，國民黨主席鄭麗文將於4月7日訪中會習近平，川普-習近平峰會延至5月舉行，美情報機構評估中國無固定侵台時間表。中日緊張升級，北京制裁訪台日本議員古屋圭司。台積電宣布日本3奈米廠計劃，立陶宛尋求深化與台經濟合作。</div></div>
 <div id="nb"></div>
-<footer><div class="ft">台灣國際視野 · 2026年04月02日<br>每日台灣時間早上07:00自動更新 · 僅供參考，不代表任何政治立場</div></footer>
 </div>
+
+<footer><div class="ft">台灣國際視野 · 2026年04月03日<br>每日台灣時間早上07:00自動更新 · 僅供參考，不代表任何政治立場</div></footer>
+</div>
+
 <script>
 const FLAG={tw:'🟢',us:'🔵',cn:'🔴',jp:'🟠',eu:'🟣',analyst:'🟡',other:'⚪'};
-const D=[{"id": 0, "theme": "全球對台政策", "news": [{"rank": 1, "isNew": true, "title": "中國制裁日本眾議員古屋圭司，東京斥為「完全不可接受」", "sum": "中國外交部3月30日宣布對日本自民黨眾議員古屋圭司實施制裁，禁止入境中國大陸、香港及澳門，凍結在華資產。73歲的古屋圭司為日華議員懇談會會長、首相高市早苗盟友，3月中旬訪台出席玉山論壇並會見賴清德總統。中國外交部發言人毛寧稱此舉為「警告他人」。日本官房副長官尾崎正直斥中方「以恫嚇方式對待不同意見者完全不可接受」。", "src": "Associated Press / Japan Times", "sc": "美國/日本", "lang": "英文/日文", "url": "https://www.japantimes.co.jp/news/2026/03/31/japan/japan-urge-china-furuya-sanctions/", "imp": 8, "why": "日中台關係三角博弈升溫", "date": "2026-03-30", "responses": [{"side": "jp", "who": "官房副長官尾崎正直", "txt": "代表人民的國會議員言論自由是國家民主的基礎，應受尊重"}, {"side": "cn", "who": "外交部發言人毛寧", "txt": "台灣問題是中國核心利益的核心，是絕對不能逾越的紅線"}, {"side": "analyst", "who": "古屋圭司本人", "txt": "我幾十年沒去過中國，在中國也沒有個人資產，這制裁對我毫無影響"}]}, {"rank": 2, "isNew": true, "title": "美國四位參議員訪台，強力敦促通過特別國防預算", "sum": "由民主黨參議員Jeanne Shaheen與共和黨參議員John Curtis率領的跨黨派代表團，包含Thom Tillis及Jacky Rosen，於3月30日至31日訪台。代表團會見賴清德總統，強調美台關係「堅如磐石」，並公開背書賴政府提出的1.25兆新台幣（390億美元）特別國防預算案。Curtis表示：「我要親自背書特別國防預算，華府同仁都在關注，這很重要。」", "src": "South China Morning Post / Nikkei Asia", "sc": "香港/日本", "lang": "英文", "url": "https://www.scmp.com/news/china/diplomacy/article/3348433/us-senators-visit-taiwan-push-defence-spending-arms-deadlines-loom", "imp": 8, "why": "美國會關切台灣國防能力", "date": "2026-03-30", "responses": [{"side": "us", "who": "參議員Jeanne Shaheen", "txt": "支撐美台關係的跨黨派支持堅如磐石，跨越數十年政治變遷，會繼續數十年"}, {"side": "tw", "who": "總統賴清德", "txt": "特別國防預算因政治因素遭拖延，但台灣強化自衛與深化美台合作的承諾絲毫未變"}, {"side": "us", "who": "參議員John Curtis", "txt": "台灣通過特別國防預算，是向世界展示台灣『承擔責任』的訊息"}]}, {"rank": 3, "isNew": true, "title": "美國情報總監辦公室報告：中國2027年不會入侵台灣", "sum": "ODNI於3月18日發布2026年度威脅評估報告，明確指出「情報界評估中國領導人目前並未計劃於2027年入侵台灣，也沒有統一的固定時間表」。報告同時評估日本首相高市早苗有關台灣的聲明代表東京政策轉變。此評估正式關閉所謂「戴維森窗口」（2027入侵時間表）的討論。", "src": "ODNI / Washington Times", "sc": "美國", "lang": "英文", "url": "https://www.dni.gov/files/ODNI/documents/assessments/ATA-2026-Unclassified-Report.pdf", "imp": 9, "why": "美情報界重新評估台海風險", "date": "2026-03-18", "responses": [{"side": "cn", "who": "外交部發言人林劍", "txt": "美方在涉台言行上應謹言慎行"}, {"side": "analyst", "who": "前國務院中國專家余茂春", "txt": "預測北京何時發動攻擊既徒勞又危險，真正的嚇阻關鍵不在時間表"}, {"side": "analyst", "who": "前國務院亞太助卿Randy Schriver", "txt": "習近平可能明天醒來評估美國分身乏術、伊朗戰爭消耗彈藥，決定動手時機已到"}]}, {"rank": 4, "isNew": false, "title": "川普習近平峰會延後至五月，140億美元對台軍售待定", "sum": "川普因伊朗戰爭要求將原定3月31日至4月2日的訪中行程延後「約一個月」。據路透社報導，一項價值140億美元的對台軍售案——可能為史上最大——已準備就緒等待總統批准，預計峰會後宣布。軍售內容包括愛國者PAC-3導彈、NASAMS防空系統及60億美元不對稱作戰能力。台北官員堅持軍售仍在軌道上。", "src": "South China Morning Post / Reuters", "sc": "香港", "lang": "英文", "url": "https://www.scmp.com/news/china/politics/article/3346914/will-postponed-trump-xi-summit-affect-us-arms-sales-taiwan", "imp": 9, "why": "史上最大對台軍售案懸而未決", "date": "2026-03-17", "responses": [{"side": "cn", "who": "北京", "txt": "台灣是雙邊關係中最重要的議題，美方應審慎處理對台軍售問題"}, {"side": "analyst", "who": "歐亞集團中國業務主管David Meale", "txt": "中國似乎在提醒華府紅線在哪，同時避免危及川普四月訪中計劃的行動"}, {"side": "tw", "who": "台灣官員", "txt": "軍售案仍在軌道上推進"}]}, {"rank": 5, "isNew": false, "title": "中國2026年國防預算達2780億美元，年增7%", "sum": "中國財政部於3月「兩會」期間提出2026年度國防預算約2780億美元，較2025年增長7%，略低於前三年7.2%的年增幅。同時，政府工作報告將「反對台獨」措辭改為「打擊台獨」，反映對賴清德政府的強硬立場。相較之下，台灣2026年國防預算經大幅增加16%後僅310億美元。", "src": "AEI-ISW", "sc": "美國", "lang": "英文", "url": "https://www.aei.org/articles/china-taiwan-update-march-13-2026/", "imp": 7, "why": "兩岸軍力差距持續擴大", "date": "2026-03-13", "responses": [{"side": "cn", "who": "習近平", "txt": "將解放軍現代化與中共領導及黨的軍隊建設推進相結合"}, {"side": "analyst", "who": "AEI-ISW團隊", "txt": "2026年工作報告措辭從『反對台獨』改為『打擊台獨』，反映北京對賴清德的強硬升級"}, {"side": "other", "who": "Foreign Affairs", "txt": "軍力差距之大，台灣無法追趕"}]}, {"rank": 6, "isNew": false, "title": "布魯金斯學會：美國對台敘事需要更新", "sum": "布魯金斯學會報告指出，儘管川普政府在美台關係實質進展上維持穩健，但圍繞台灣的敘事正朝危險方向發展。財政部長Bessent警告台灣晶片生產集中構成全球經濟「單點故障」。商務部長Lutnick設定目標：至2029年川普任期結束時，將台灣40%半導體供應鏈移至美國，但台灣首席貿易談判代表公開表示「不可能」。", "src": "Brookings Institution", "sc": "美國", "lang": "英文", "url": "https://www.brookings.edu/articles/americas-narrative-on-taiwan-needs-an-update/", "imp": 7, "why": "美方對台戰略敘事轉變", "date": "2026-03-01", "responses": [{"side": "us", "who": "財政部長Scott Bessent", "txt": "台灣晶片生產集中構成全球經濟的單點故障"}, {"side": "us", "who": "商務部長Howard Lutnick", "txt": "美國將盡快盡量減少對台灣晶片的依賴，目標2029年轉移40%供應鏈"}, {"side": "tw", "who": "台灣首席貿易談判代表", "txt": "這是不可能的目標"}]}]}, {"id": 1, "theme": "全球對台灣事務的評論", "news": [{"rank": 1, "isNew": true, "title": "習近平邀請國民黨主席鄭麗文訪中，2016年以來首次", "sum": "中共中央與習近平總書記邀請國民黨主席鄭麗文於4月7日至12日率團訪問江蘇、上海及北京。國台辦主任宋濤宣布邀請，稱旨在「促進國共兩黨關係與兩岸關係和平發展」。鄭麗文表示希望證明「兩岸並非注定走向戰爭」。此訪將成為2016年洪秀柱會習以來首次現任黨主席訪中，預計在川習峰會前約一個月舉行。", "src": "Bloomberg / Japan Times", "sc": "美國/日本", "lang": "英文", "url": "https://www.bloomberg.com/news/articles/2026-03-30/xi-invites-taiwan-s-opposition-leader-to-first-visit-in-decade", "imp": 9, "why": "兩岸互動新動態，牽動台灣選舉", "date": "2026-03-30", "responses": [{"side": "tw", "who": "國民黨主席鄭麗文", "txt": "希望四月的訪問能開啟兩岸關係新春天，這將是雙方釋出善意、建立互信的第一步"}, {"side": "tw", "who": "民進黨秘書長許國榮", "txt": "希望鄭麗文向習近平傳達台灣是主權獨立國家、有權選出自己的總統；也問問習近平中國何時能選總統"}, {"side": "analyst", "who": "Bloomberg", "txt": "習近平選在川普訪中前接見國民黨主席，展示對台更友好的另一派政治力量"}]}, {"rank": 2, "isNew": false, "title": "Foreign Policy分析：拜川普之賜，習近平對台更有耐心", "sum": "Foreign Policy刊文指出，中國短期內攻台可能性已降低，但原因並不令人安心。過去一年的事態發展讓習近平有理由相信川普將在他擴大對台影響力過程中提供便利，無需賭上入侵的風險。國民黨主席鄭麗文主張台灣不能依賴選出川普兩次的美國。中國整體國力持續增長，可在繼續累積有利態勢的同時，加強心理戰削弱台北。", "src": "Foreign Policy", "sc": "美國", "lang": "英文", "url": "https://foreignpolicy.com/2026/02/25/trump-xi-china-taiwan-invasion-semiconductor-tariffs/", "imp": 8, "why": "分析美中台三角互動新態勢", "date": "2026-02-25", "responses": [{"side": "tw", "who": "國民黨主席鄭麗文", "txt": "台灣不能依賴選出川普兩次的美國"}, {"side": "analyst", "who": "Foreign Policy", "txt": "華府持續疏遠歐洲盟友、在亞洲播下懷疑種子，北京沒有理由在川普侵蝕美國全球外交網絡時擋他的路"}, {"side": "cn", "who": "北京", "txt": "中國現在比川普重返白宮時更有信心地競爭，已承受住去年的關稅攻勢"}]}, {"rank": 3, "isNew": false, "title": "The Diplomat：中國軍事威脅嚇壞世界，台灣人卻不以為意", "sum": "The Diplomat報導指出，2025年底中國舉行大規模「正義使命」軍演，部署至少14艘軍艦、14艘海警船、兩棲攻擊群及130架戰機，解放軍明確表示演習是封鎖台灣的準備，聲稱成功封鎖高雄與基隆港。然而台灣民眾反應冷淡，主流媒體頭條更關注已故藝人曹西平及台積電年報。調查顯示台灣人對中國軍演習以為常。", "src": "The Diplomat", "sc": "美國", "lang": "英文", "url": "https://thediplomat.com/2026/03/chinas-military-threats-against-taiwan-scare-the-world-but-not-taiwanese-people/", "imp": 6, "why": "台灣社會對威脅感知研究", "date": "2026-03-09", "responses": [{"side": "analyst", "who": "The Diplomat", "txt": "世界看解放軍演習想到第三次世界大戰，台灣人大多覺得『又來了』"}, {"side": "cn", "who": "解放軍", "txt": "演習是封鎖台灣的準備，已成功封鎖高雄與基隆港"}, {"side": "tw", "who": "台灣政府", "txt": "解放軍聲稱無人機拍攝台北101畫面是假新聞"}]}, {"rank": 4, "isNew": false, "title": "清華大學智庫：台海緊張為北京2026年首要地緣政治風險", "sum": "清華大學國際安全與戰略中心（CISS）發布年度報告，將台海升溫列為北京2026年首要外部安全關切，主因美國期中選舉不確定性及日本介入增加。報告警告東海、台海、南海可能形成「三海聯動」，美國及日本、菲律賓等盟國可能採取「前所未有」行動，產生連鎖反應。", "src": "South China Morning Post", "sc": "香港", "lang": "英文", "url": "https://www.scmp.com/news/china/diplomacy/article/3345940/taiwan-tensions-no-1-beijings-top-10-geopolitical-risks-2026-think-tank", "imp": 7, "why": "中國智庫視角看台海風險", "date": "2026-03-13", "responses": [{"side": "analyst", "who": "清華大學CISS", "txt": "東海、台海、南海可能形成三海聯動，引發連鎖反應"}, {"side": "analyst", "who": "CISS報告", "txt": "無論美國期中選舉結果如何，對中科技封鎖可能從交易性衝擊轉向系統性圍堵"}, {"side": "cn", "who": "北京", "txt": "2026年是塑造中國外部防衛環境的關鍵時刻"}]}, {"rank": 5, "isNew": false, "title": "澳洲戰略政策研究所：習近平2026年不會動武台灣", "sum": "澳洲戰略政策研究所（ASPI）資深分析師Joe Keary發表評估指出，2026年中國不太可能封鎖或入侵台灣，北京將持續運用脅迫工具侵蝕台灣意志、縮限其戰略選項。中國面臨經濟放緩、房地產脆弱、青年失業率高等國內逆風，戰爭將危及執政正當性。軍事能力上紙面最強，但習近平對解放軍的反腐清洗削弱領導層。", "src": "ASPI The Strategist", "sc": "澳洲", "lang": "英文", "url": "https://www.aspistrategist.org.au/xis-taiwan-scorecard-why-2026-is-not-the-year/", "imp": 6, "why": "智庫評估習近平動武決策條件", "date": "2026-01-14", "responses": [{"side": "analyst", "who": "ASPI分析師Joe Keary", "txt": "習近平可能視台灣在野黨阻擋國防預算為機會與警訊：台灣更難脅迫，但政治分裂"}, {"side": "analyst", "who": "ASPI報告", "txt": "估計即使有限的台灣戰爭也可能讓中國損失數兆美元"}, {"side": "analyst", "who": "Joe Keary", "txt": "北京正在戰術性管理與華府關係，特別是四月預期的領導人峰會前"}]}, {"rank": 6, "isNew": false, "title": "Foreign Affairs：2026年台灣面臨完美風暴？", "sum": "Foreign Affairs刊文分析，多重因素匯聚可能誘使北京對台動作：中國2025年國防預算2470億美元對比台灣2026年（大增16%後）僅310億美元；解放軍200萬現役兵力對比台灣17萬。川普未表態是否會防衛台灣，美國介入假設大幅削弱。中國政策圈日益確信「統一」努力將發生，若台灣挑釁甚至可能迫在眉睫。", "src": "Foreign Affairs", "sc": "美國", "lang": "英文", "url": "https://www.foreignaffairs.com/china/perfect-storm-taiwan-2026", "imp": 7, "why": "重量級學術期刊台海情勢分析", "date": "2026-02-02", "responses": [{"side": "analyst", "who": "Foreign Affairs", "txt": "中國對台觀點在2025年發生重大轉變，這次北京相信了自己說的話"}, {"side": "analyst", "who": "Foreign Affairs", "txt": "驅動此評估的根本因素是美國政治及川普對軍事防衛台灣興趣不大的看法"}, {"side": "cn", "who": "中國政策圈", "txt": "統一努力將會發生，若台灣挑釁北京甚至可能迫在眉睫"}]}]}, {"id": 2, "theme": "台灣在國際舞台上的角色", "news": [{"rank": 1, "isNew": true, "title": "台積電確認2028年在日本量產3奈米晶片", "sum": "台積電正式確認將於2028年在日本第二座晶圓廠量產3奈米製程晶片，月產能1.5萬片12吋晶圓。此計劃由執行長魏哲家於2月會見日本首相高市早苗時披露。第二廠原定採用成熟製程，因全球AI需求飆升而升級。兩座日本廠總投資逾200億美元，第一廠已於2024年底開始量產12至28奈米製程晶片。", "src": "Benzinga", "sc": "美國", "lang": "英文", "url": "https://www.benzinga.com/markets/tech/26/04/51591878/taiwan-semiconductor-eyes-cutting-edge-3nm-production-in-japan-by-2028", "imp": 8, "why": "台灣半導體全球佈局重大進展", "date": "2026-04-01", "responses": [{"side": "tw", "who": "台積電", "txt": "第二座日本廠將採用先進3奈米製程，規劃月產能1.5萬片12吋晶圓"}, {"side": "jp", "who": "日本政府", "txt": "已核准台積電在熊本設立先進AI晶片超級工廠計劃"}, {"side": "analyst", "who": "Benzinga", "txt": "台積電正在台灣以外擴大全球製造版圖，以降低地緣政治風險並滿足AI驅動需求"}]}, {"rank": 2, "isNew": true, "title": "貝萊德台灣ETF三月資金外流11億美元創紀錄", "sum": "據彭博數據，貝萊德70億美元規模的iShares MSCI台灣ETF（EWT）三月份資金外流達11億美元，創下紀錄新高。同期印度ETF也流出14億美元創紀錄。然而諷刺的是，亞洲股市在4月1日大幅反彈。此資金流向反映投資人對台海地緣政治風險及全球科技股波動的擔憂。", "src": "Bloomberg", "sc": "美國", "lang": "英文", "url": "https://www.bloomberg.com/news/articles/2026-04-01/india-taiwan-etfs-see-record-exodus-before-asia-stock-rebound", "imp": 7, "why": "國際資金對台信心指標", "date": "2026-04-01", "responses": [{"side": "analyst", "who": "Bloomberg", "txt": "追蹤亞洲單一國家的最大美國上市ETF在三月遭遇創紀錄資金外流"}, {"side": "other", "who": "交易員", "txt": "三月從貝萊德67億美元印度ETF抽走創紀錄14億美元，從70億美元台灣ETF抽走11億美元"}, {"side": "analyst", "who": "市場分析", "txt": "資金外流發生在亞洲股市4月1日大幅反彈前夕"}]}, {"rank": 3, "isNew": true, "title": "台灣發射第二顆立方衛星，強化太空科技實力", "sum": "台灣創未來科技公司與太空發展署合作的「黑鳶二號」8U立方衛星，於3月31日搭乘SpaceX獵鷹九號火箭自加州范登堡太空軍基地發射升空。這是雙方自2023年合作以來的第二顆衛星，展現台灣在太空科技領域的持續進展，強化台灣在國際太空產業的參與。", "src": "Taiwan News / Taipei Times", "sc": "台灣（英文媒體）", "lang": "英文", "url": "https://www.taipeitimes.com/News/taiwan", "imp": 5, "why": "台灣太空科技實力展現", "date": "2026-04-01", "responses": [{"side": "tw", "who": "創未來科技公司", "txt": "黑鳶二號8U立方衛星已成功發射"}, {"side": "tw", "who": "官員", "txt": "台美太空合作存在強勁潛力"}, {"side": "analyst", "who": "Focus Taiwan", "txt": "副總統蕭美琴強調台美AI合作成果"}]}, {"rank": 4, "isNew": false, "title": "台積電主導3200億美元AI晶片榮景，產能嚴重吃緊", "sum": "Benzinga報導，台積電正引領3200億美元AI晶片榮景，鞏固全球晶片製造「Foundry 2.0」新時代。台積電3奈米產能「超載」，大型科技公司AI需求遠超供給，造成產品時程延遲。儘管如此，台積電仍以72%市佔率遙遙領先三星的7%。其2奈米產能已被預訂至2028年。", "src": "Benzinga", "sc": "美國", "lang": "英文", "url": "https://www.benzinga.com/markets/tech/26/03/51538010/taiwan-semiconductor-anchors-explosive-320-billion-chip-boom-in-2025", "imp": 7, "why": "台灣半導體全球主導地位", "date": "2026-03-31", "responses": [{"side": "analyst", "who": "Benzinga", "txt": "台積電3奈米產能超載，AI需求遠超供給，成為重大瓶頸"}, {"side": "analyst", "who": "產業分析", "txt": "瓶頸正從前端製造轉向後端封裝，顯示更緊密連結的產業生態"}, {"side": "tw", "who": "台積電", "txt": "以72%市佔率主導市場，三星僅7%"}]}, {"rank": 5, "isNew": false, "title": "美台聯合火力協調中心強化不對稱作戰能力", "sum": "Defense News報導，美台預計推出「聯合火力協調中心」，運用最新裝備訓練台灣精銳部隊進行不對稱作戰。此計劃旨在協調台灣防衛，應對解放軍可能攻擊，因應部分美國智庫認為中國將於2027年具備足夠攻台能力的評估。美國可能提供主要國防承包商軍事裝備，特別強化情報、監視、偵察及早期預警能力。", "src": "Defense News", "sc": "美國", "lang": "英文", "url": "https://www.defensenews.com/global/asia-pacific/2026/02/02/taiwan-us-firepower-center-to-hone-asymmetric-warfare-tactics/", "imp": 7, "why": "美台軍事合作深化", "date": "2026-02-02", "responses": [{"side": "tw", "who": "國防部", "txt": "已系統化、深化與美軍合作以強化能力，但不便透露細節"}, {"side": "us", "who": "美國印太司令部", "txt": "不會在聯合火力中心部署部隊"}, {"side": "analyst", "who": "淡江大學黃介正教授", "txt": "聯合協作將為台灣提供更好的目標定位與信號傳遞"}]}, {"rank": 6, "isNew": true, "title": "The Conversation：台灣如何主導全球晶片產業", "sum": "倫敦國王學院發表專文分析台灣半導體霸主地位形成過程。台積電生產全球逾90%最先進半導體晶片，使台灣成為「利基超級大國」，在戰略不可或缺產業擁有超額全球影響力。1970年代台灣技術官僚認清無法立即在電子前沿競爭，遂專注精密製造能力。中國半導體在2025年前未達自製目標，但正加速追趕。", "src": "The Conversation", "sc": "英國", "lang": "英文", "url": "https://theconversation.com/how-taiwan-came-to-dominate-the-global-chip-industry-276939", "imp": 6, "why": "解析台灣半導體戰略價值", "date": "2026-04-01", "responses": [{"side": "analyst", "who": "倫敦國王學院Robyn Klingler-Vidra", "txt": "台灣半導體霸主地位使其成為利基超級大國，在戰略不可或缺產業擁有超額全球影響力"}, {"side": "cn", "who": "中國晶片業高層", "txt": "13位高層提案到2030年將自給率提高到80%"}, {"side": "analyst", "who": "The Conversation", "txt": "台灣並非偶然踏入此地位，而是1970年代戰略遠見的結果"}]}]}];
-function render(){
-const nb=document.getElementById('nb');
-nb.innerHTML='';
-D.forEach(cat=>{
-const s=document.createElement('div');
-s.className='cs'+(cat.id===0?' on':'');
-s.dataset.c=cat.id;
-const cards=(cat.news||[]).map((n,i)=>{
-const resp=(n.responses||[]).map(r=>`<div class="resp-item"><div class="resp-flag">${FLAG[r.side]||'⚪'}</div><div><div class="resp-who ${r.side}">${r.who}</div><div class="resp-txt">${r.txt}</div></div></div>`).join('');
-const srcLink=n.url?`<a class="src-link" href="${n.url}" target="_blank" rel="noopener">🔗 閱讀原文</a>`:'';
-return `<div class="card"><div class="card-body" onclick="toggleResp(this)">${n.isNew?'<span class="new-tag">TODAY</span>':''}<div class="ct2"><div class="rk">#${n.rank||i+1}</div><div class="nt">${n.title}</div></div><div class="ib" style="width:${(n.imp||5)*10}%"></div><div class="ns">${n.sum}</div><div class="nm"><span class="mt">📰 ${n.src}</span><span class="mt">· ${n.sc}</span><span class="mt">· ${n.date}</span><span class="it">重要性 ${n.imp}/10 · ${n.why}</span></div>${srcLink}<button class="toggle-resp" onclick="event.stopPropagation();toggleResp(this.closest('.card-body'))"><span class="toggle-arrow">▶</span> 各方回應 (${(n.responses||[]).length})</button></div><div class="resp-panel"><div class="resp-title">// 各方回應</div>${resp}</div></div>`;
-}).join('');
-s.innerHTML=`<div class="ch"><div class="cn">0${cat.id+1}</div><div><div class="cl">主題 ${cat.id+1}</div><div class="ct">${cat.theme}</div></div></div><div class="nl">${cards}</div>`;
-nb.appendChild(s);
-});
+const TODAY_DATA=[{"id": 0, "theme": "全球對台政策", "news": [{"rank": 1, "isNew": true, "title": "美國情報機構年度威脅評估：中國無固定侵台時間表", "sum": "美國國家情報總監辦公室（ODNI）3月18日發布2026年年度威脅評估報告，評估中國領導人「目前不打算在2027年執行入侵台灣，也沒有實現統一的固定時間表」。報告指出解放軍持續穩步建設對台軍事能力，但中國官員認為全面兩棲入侵「極具挑戰性且風險極高」，尤其若美國介入。國家情報總監圖爾西·蓋巴德表示，中國「可能更傾向為最終和平統一創造條件」。", "src": "USNI News / Fox News / NBC News", "sc": "美國", "lang": "英文", "url": "https://news.usni.org/2026/03/19/china-not-committed-to-2027-taiwan-invasion-u-s-intel-report-says", "imp": 10, "why": "修正「戴維森窗口」2027侵台說", "date": "2026-03-19", "responses": [{"side": "us", "who": "國家情報總監蓋巴德", "txt": "中國可能更傾向為最終和平統一創造條件，而非衝突"}, {"side": "cn", "who": "外交部發言人林劍", "txt": "台灣問題是中國內政，美方應謹言慎行，停止炒作中國威脅論"}, {"side": "analyst", "who": "PLATracker創辦人Ben Lewis", "txt": "報告重申美國長期評估，解放軍持續為必要時入侵並擊敗美國干預做準備"}]}, {"rank": 2, "isNew": true, "title": "四名美國參議員訪台施壓國防預算通過", "sum": "由民主黨參議員Jeanne Shaheen與共和黨參議員John Curtis率領的跨黨派代表團於3月30日抵台進行兩天訪問，敦促台灣立法院通過賴清德政府提出的新台幣1.25兆（400億美元）特別國防預算。代表團成員還包括參議員Thom Tillis和Jacky Rosen。Shaheen表示此行目的是傳達「美國國會對台灣的兩黨支持堅定一致」。Curtis表示：「我個人支持特別國防預算，華府同僚正密切關注此事。」", "src": "South China Morning Post / Nikkei Asia", "sc": "香港/日本", "lang": "英文", "url": "https://www.scmp.com/news/china/diplomacy/article/3348433/us-senators-visit-taiwan-push-defence-spending-arms-deadlines-loom", "imp": 9, "why": "美國會施壓台灣增加國防支出", "date": "2026-03-30", "responses": [{"side": "us", "who": "參議員John Curtis", "txt": "我個人背書特別國防預算，華府同僚正密切關注這件事非常重要"}, {"side": "tw", "who": "賴清德總統", "txt": "預算審查因政治因素延宕，但強化自我防衛的決心絲毫未變"}, {"side": "analyst", "who": "Nikkei Asia", "txt": "此行旨在安撫因伊朗戰爭副作用及中國、北韓憂慮而不安的東北亞夥伴"}]}, {"rank": 3, "isNew": true, "title": "中國制裁日本議員古屋圭司因訪台遭北京譴責", "sum": "中國外交部3月30日宣布對日本自民黨議員古屋圭司實施制裁，包括禁止入境中國大陸、香港及澳門，並凍結在華資產。外交部發言人毛寧指古屋「勾結台獨分裂勢力」。日本副內閣官房長官尾崎政直回應稱此舉「完全無法接受且極為遺憾」，強調「國會議員的言論自由是民主國家的根本」。古屋表示已數十年未訪中，制裁對他沒有影響。", "src": "Japan Times / The Hill (AP)", "sc": "日本/美國", "lang": "英文", "url": "https://www.japantimes.co.jp/news/2026/03/31/japan/japan-urge-china-furuya-sanctions/", "imp": 8, "why": "反映中日因台灣問題緊張升級", "date": "2026-03-31", "responses": [{"side": "jp", "who": "副內閣官房長官尾崎政直", "txt": "中國單方面行動如同恐嚇不同意見者，完全無法接受"}, {"side": "cn", "who": "外交部發言人毛寧", "txt": "台灣問題是中國核心利益的核心，是絕對不可跨越的紅線"}, {"side": "analyst", "who": "Japan Times", "txt": "此舉是高市早苗去年台灣言論後中日緊張升級的最新例證"}]}, {"rank": 4, "isNew": true, "title": "川普-習近平峰會延至5月14-15日舉行", "sum": "美國總統川普因伊朗戰爭延後訪中行程，將於5月14日至15日訪問北京與習近平會面。這是川普近八年來首次訪中。布魯金斯學會分析指出，北京最擔心川普的不可預測性，中國希望利用峰會設定框架，讓美方承認北京的「核心利益」，尤其是台灣問題。專家認為習近平將竭力向川普強調台灣議題的敏感性。", "src": "Brookings Institution", "sc": "美國", "lang": "英文", "url": "https://www.brookings.edu/articles/the-delayed-trump-xi-summit-iran-and-the-us-china-relationship/", "imp": 9, "why": "美中領袖峰會將影響台海局勢", "date": "2026-03-27", "responses": [{"side": "us", "who": "川普總統", "txt": "我非常期待與習主席相處，這將是一個歷史性盛事"}, {"side": "analyst", "who": "布魯金斯學會Ryan Hass", "txt": "習近平會大力向川普強調台灣議題的敏感性及其關切"}, {"side": "analyst", "who": "布魯金斯學會Pattie Kim", "txt": "中方希望美國承認中國核心利益，尤其是台灣問題"}]}, {"rank": 5, "isNew": true, "title": "立陶宛制定對台經濟合作行動計劃", "sum": "立陶宛外交部4月1日宣布已制定優先經濟部門及潛在合作項目的行動計劃，以加強與台灣合作。外交部聲明表示：「主要重點是建立可持續經濟聯繫，促進立陶宛高科技產業發展。」總統顧問Asta Skaisgirytė表示，若獲台北同意，立陶宛可從台灣夥伴獲得「比現在更多的東西」。該計劃聚焦微電子、網路安全及綠色科技領域。", "src": "LRT (Lithuanian Radio and Television)", "sc": "立陶宛", "lang": "英文", "url": "https://www.lrt.lt/en/news-in-english/19/2885070/high-tech-investment-among-priorities-in-lithuania-s-action-plan-for-taiwan", "imp": 7, "why": "歐盟成員國深化對台經濟連結", "date": "2026-04-01", "responses": [{"side": "eu", "who": "立陶宛外交部", "txt": "主要重點是建立可持續經濟聯繫，促進立陶宛高科技產業發展"}, {"side": "eu", "who": "總統顧問Skaisgirytė", "txt": "若獲台北同意，我們可從台灣夥伴獲得比現在更多的東西"}, {"side": "analyst", "who": "LRT", "txt": "2021年台灣代表處開設時曾預期經濟關係突破，但政府承認進展有限"}]}, {"rank": 6, "isNew": false, "title": "中國2026國防預算增至2780億美元", "sum": "美國企業研究所（AEI）與戰爭研究所（ISW）3月報告指出，中國財政部在兩會期間提出2026年國防預算約2780億美元，較2025年增長7%。報告稱中國2026年政府工作報告對台用詞更具戰鬥性，將「反對台獨」改為「打擊台獨」。解放軍空中侵擾次數自賴清德就職後每月超過300架次，但2026年1-2月降至200架次以下，為2024年4月以來首次。", "src": "American Enterprise Institute (AEI)", "sc": "美國", "lang": "英文", "url": "https://www.aei.org/articles/china-taiwan-update-march-13-2026/", "imp": 8, "why": "解放軍現代化持續加速", "date": "2026-03-13", "responses": [{"side": "analyst", "who": "AEI/ISW聯合報告", "txt": "2026年工作報告將「反對台獨」改為「打擊台獨」，用詞更具戰鬥性"}, {"side": "cn", "who": "中國政府", "txt": "國防預算增長7%，略低於前三年7.2%年增率"}, {"side": "analyst", "who": "AEI分析", "txt": "解放軍ADIZ侵擾自賴清德就職後翻倍，但2026年初出現季節性下降"}]}]}, {"id": 1, "theme": "全球對台灣事務的評論", "news": [{"rank": 1, "isNew": true, "title": "外交事務：2026年是台灣的完美風暴？", "sum": "《外交事務》2月刊文分析多重因素如何可能誘使北京對台動武。文章指出中國2025年國防預算2470億美元，而台灣2026年國防預算即使大增16%也僅310億美元。解放軍擁有超過200萬現役軍人，而台灣僅17萬。關鍵驅動因素是美國政治及川普對軍事保衛台灣興趣不明的認知，加上習近平對統一的執著追求及賴清德支持率下滑。", "src": "Foreign Affairs", "sc": "美國", "lang": "英文", "url": "https://www.foreignaffairs.com/china/perfect-storm-taiwan-2026", "imp": 9, "why": "深度分析2026台海風險因素", "date": "2026-02-02", "responses": [{"side": "analyst", "who": "Foreign Affairs", "txt": "川普未表態是否會防衛台灣，美國干預的假設比以前更弱"}, {"side": "analyst", "who": "文章分析", "txt": "中國政策界越來越確信控制台灣的努力將會發生，可能迫在眉睫"}, {"side": "analyst", "who": "文章結論", "txt": "軍力懸殊巨大，台灣無法趕上，但制裁代價可能讓北京三思"}]}, {"rank": 2, "isNew": true, "title": "NPR報導：美情報報告引發台灣內部辯論", "sum": "NPR 3月31日報導，美國情報報告重新點燃台灣內部關於中國意圖及如何合理自我防衛的爭論。賴清德總統去年11月警告中國目標是在2027年前做好對台軍事行動準備，但國家情報總監蓋巴德的報告可能使這一推動複雜化。國民黨立委葛如鈞表示，報告顯示賴總統可能誇大了中國威脅。新加坡國立大學學者莊嘉穎指出，這並未排除中國對台使用武力的可能。", "src": "NPR", "sc": "美國", "lang": "英文", "url": "https://www.npr.org/2026/03/31/nx-s1-5766288/taiwan-reacts-to-u-s-intelligence-report-about-chinas-intentions", "imp": 8, "why": "美情報報告影響台灣國防辯論", "date": "2026-03-31", "responses": [{"side": "us", "who": "國家情報總監蓋巴德", "txt": "中國可能更傾向為與台灣最終和平統一創造條件，而非衝突"}, {"side": "analyst", "who": "莊嘉穎（新加坡國立大學）", "txt": "這並未排除對台使用武力或試圖支配台灣的可能"}, {"side": "other", "who": "國民黨立委葛如鈞", "txt": "報告顯示賴總統可能誇大了來自中國的威脅"}]}, {"rank": 3, "isNew": true, "title": "布魯金斯：美國對台敘事需要更新", "sum": "布魯金斯學會分析指出，儘管美台關係實質持續進展，華府圍繞台灣的敘事正朝危險方向發展。財政部長貝森特警告台灣晶片生產集中是「全球經濟的單點故障」，反映將台灣視為美國弱點的思維。商務部長盧特尼克揚言到川普任期結束的2029年，可將台灣半導體供應鏈40%回流美國，但台灣首席貿易談判代表公開稱此目標「不可能」。", "src": "Brookings Institution", "sc": "美國", "lang": "英文", "url": "https://www.brookings.edu/articles/americas-narrative-on-taiwan-needs-an-update/", "imp": 8, "why": "分析美台關係敘事風險", "date": "2026-03-01", "responses": [{"side": "us", "who": "財政部長貝森特", "txt": "台灣先進晶片生產集中是全球經濟的單點故障"}, {"side": "us", "who": "商務部長盧特尼克", "txt": "到川普任期結束，台灣半導體供應鏈40%可能回流美國"}, {"side": "analyst", "who": "布魯金斯學會", "txt": "若不處理，此敘事可能顛覆美國數十年維護台海和平穩定的努力"}]}, {"rank": 4, "isNew": true, "title": "澳洲ASPI：習近平台灣記分卡——為何2026不是動武之年", "sum": "澳洲戰略政策研究所（ASPI）資深分析師Joe Keary撰文指出，中國在2026年企圖封鎖或入侵台灣的可能性不大。北京更可能持續使用脅迫工具包削弱台灣意志、壓縮其戰略選項。文章分析習近平決策考量的七大因素：軍事準備度、領導層可靠性、美國可能反應、其他國家反應、台灣軍事準備、中國國內問題及更廣泛全球背景。", "src": "ASPI The Strategist", "sc": "澳洲", "lang": "英文", "url": "https://www.aspistrategist.org.au/xis-taiwan-scorecard-why-2026-is-not-the-year/", "imp": 8, "why": "專業智庫分析2026台海情勢", "date": "2026-01-14", "responses": [{"side": "analyst", "who": "Joe Keary (ASPI)", "txt": "短期動武的脅迫可能性已下降，但北京仍保留使用武力選項"}, {"side": "analyst", "who": "ASPI分析", "txt": "能力不等於信心，解放軍可能比以往更接近能為台灣而戰，但成功不保證"}, {"side": "analyst", "who": "ASPI結論", "txt": "2026年升級將破壞北京穩定貿易、技術獲取及外交渠道的努力"}]}, {"rank": 5, "isNew": true, "title": "外交政策：拜川普之賜，習近平在台灣問題上時間站在他這邊", "sum": "《外交政策》2月分析指出，過去一年的事件讓習近平有理由相信，川普將協助其擴大對台影響力而無需冒險入侵。國民黨主席鄭麗文表示希望今年稍早與習近平會面，早於川普4月訪中。鄭麗文主張台灣不能依賴一個兩度選出川普的美國。短期內中國攻擊台灣的可能性已降低，但原因並不令人安心。", "src": "Foreign Policy", "sc": "美國", "lang": "英文", "url": "https://foreignpolicy.com/2026/02/25/trump-xi-china-taiwan-invasion-semiconductor-tariffs/", "imp": 7, "why": "分析川普對中國台灣戰略的影響", "date": "2026-02-25", "responses": [{"side": "other", "who": "國民黨主席鄭麗文", "txt": "台灣不能依賴一個兩度選出川普的美國"}, {"side": "analyst", "who": "Foreign Policy", "txt": "中國現在比川普重返白宮時更有信心地競爭，已承受住關稅攻擊"}, {"side": "analyst", "who": "文章分析", "txt": "華府持續疏遠歐洲盟友，在亞洲播下疑慮，北京不應在川普削弱美國外交網絡時擋路"}]}, {"rank": 6, "isNew": false, "title": "Modern Diplomacy：習近平2026新年致詞——台灣現在或永遠", "sum": "Modern Diplomacy分析習近平2025年12月31日新年致詞，指出台灣再次成為核心焦點。習近平宣稱「兩岸同胞血濃於水，祖國統一是時代潮流，不可阻擋」，並正式設立「台灣光復日」。文章認為這是對國際社會發出深刻地緣政治及地緣戰略意義的信號。2026年美國中期選舉為中國提供獨特機會。", "src": "Modern Diplomacy", "sc": "歐洲", "lang": "英文", "url": "https://moderndiplomacy.eu/2026/01/03/xi-jinpings-new-year-2026-address-taiwan-now-or-never/", "imp": 7, "why": "解讀習近平台灣政策信號", "date": "2026-01-03", "responses": [{"side": "cn", "who": "習近平", "txt": "兩岸同胞血濃於水，祖國統一是時代潮流，不可阻擋"}, {"side": "analyst", "who": "Modern Diplomacy", "txt": "習近平正式設立台灣光復日，是深刻地緣政治意義的舉動"}, {"side": "analyst", "who": "文章分析", "txt": "2025年12月底正義使命軍演可能是中國準備作戰吞併台灣的最後演練"}]}]}, {"id": 2, "theme": "台灣在國際舞台上的角色", "news": [{"rank": 1, "isNew": true, "title": "國民黨主席鄭麗文接受習近平邀請4月訪中", "sum": "Bloomberg、Japan Times、Manila Times等媒體報導，台灣最大在野黨國民黨主席鄭麗文接受習近平邀請，將於4月7日至12日訪問江蘇、上海及北京。這是十年來首位國民黨主席訪中。鄭麗文表示「欣然接受」邀請，期盼「兩岸關係和平發展的新春天」。此行安排在川普5月訪中之前，分析認為北京意在塑造台灣議題敘事。Vision Times引述台灣國防安全研究院沈明室指此為典型統戰策略。", "src": "Bloomberg / Japan Times / Manila Times", "sc": "美國/日本/菲律賓", "lang": "英文", "url": "https://www.japantimes.co.jp/news/2026/03/30/asia-pacific/politics/kmt-cheng-xi-taiwan-china/", "imp": 10, "why": "十年來首位在野黨主席訪中", "date": "2026-03-30", "responses": [{"side": "other", "who": "國民黨主席鄭麗文", "txt": "希望證明兩岸不是注定要戰爭，透過智慧與努力共同開創和平大道"}, {"side": "cn", "who": "國台辦主任宋濤", "txt": "鄭麗文多次表達訪問大陸意願，邀請旨在促進兩黨關係及兩岸和平發展"}, {"side": "analyst", "who": "沈明室（國防安全研究院）", "txt": "習近平與在野黨主席會面是典型統戰策略，可強化其黨內權力}"}]}, {"rank": 2, "isNew": true, "title": "台積電宣布2028年在日本量產3奈米晶片", "sum": "Reuters、Benzinga等報導，台積電計劃2028年在日本第二座工廠開始設備安裝及3奈米晶圓量產。台積電執行長魏哲家今年2月與日本首相高市早苗會面時宣布此計劃。修訂計劃顯示該廠月產能將達15,000片12吋晶圓。日本《讀賣新聞》報導第二廠投資約170億美元。這標誌台積電海外擴張從成熟製程轉向最先進技術的重大轉變。", "src": "Reuters / Benzinga / Business Recorder", "sc": "美國/巴基斯坦", "lang": "英文", "url": "https://www.brecorder.com/news/40414232/tsmc-plans-3-nanometre-chip-production-launch-in-japan-in-2028", "imp": 9, "why": "台積電先進製程首次海外佈局", "date": "2026-04-01", "responses": [{"side": "tw", "who": "台積電執行長魏哲家", "txt": "計劃在日本第二座工廠量產先進3奈米晶片"}, {"side": "jp", "who": "日本首相高市早苗", "txt": "（2月會談中討論先進製程合作）"}, {"side": "analyst", "who": "Bisinfotech", "txt": "此舉標誌台積電日本業務的重大技術躍升，減少生產網絡地理集中風險"}]}, {"rank": 3, "isNew": true, "title": "美台2月貿易協議消除99%貿易壁壘", "sum": "多家美媒報導，川普政府2月與台灣達成協議，消除99%貿易壁壘。2025年前11個月美台貿易逆差近1270億美元。美國高度依賴台灣晶片生產，參議員Curtis強調「我們要確保在投資這一地區時，你們也在投資，我們是一起的」。此協議反映美方既施壓台灣增加國防支出，也尋求深化經貿連結。", "src": "ABC News (AP) / Spectrum News", "sc": "美國", "lang": "英文", "url": "https://abcnews.com/US/wireStory/us-lawmakers-visit-taiwan-trumps-summit-chinas-xi-131498747", "imp": 8, "why": "美台經貿關係重大突破", "date": "2026-03-28", "responses": [{"side": "us", "who": "參議員John Curtis", "txt": "美台聯盟是美國在印太地區最具戰略及道德意義的夥伴關係之一"}, {"side": "us", "who": "參議員Jeanne Shaheen", "txt": "此跨黨派代表團顯示國會對這些聯盟的承諾堅定不移，將超越任何一屆政府"}, {"side": "analyst", "who": "AP分析", "txt": "美國依賴台灣晶片生產，2025年前11個月貿易逆差近1270億美元}"}]}, {"rank": 4, "isNew": false, "title": "台灣提出NT$1.25兆特別國防預算計劃", "sum": "Defense News報導，賴清德總統去年11月提出約NT$1.25兆（395億美元）特別國防預算，自2026年至2033年，用於建設多層「T-Dome」防空網絡。國防部表示預算涵蓋七大類武器採購，包括約20萬架無人機及超過1000艘無人水面艦艇。在野黨國民黨及民眾黨分別提出較低金額的NT$3800億及NT$4000億版本，立法院審議陷入僵局。", "src": "Defense News", "sc": "美國", "lang": "英文", "url": "https://www.defensenews.com/global/asia-pacific/2026/01/23/taiwan-leaders-face-pushback-on-massive-defense-budget-mechanics/", "imp": 8, "why": "台灣史上最大軍事投資計劃", "date": "2026-01-23", "responses": [{"side": "tw", "who": "國防部次長徐斯儉", "txt": "預算中約NT$9000億用於購買美製武器，NT$3000億用於國內軍事支出"}, {"side": "analyst", "who": "交通大學胡進立教授", "txt": "資金技術上可籌措，台灣有財政能力，但真正制約是政治耐心和跨黨協商"}, {"side": "tw", "who": "行政院長卓榮泰", "txt": "立法院擋預算已影響NT$752億用於嚇阻及不對稱作戰能力的款項}"}]}, {"rank": 5, "isNew": false, "title": "解放軍2025年底「正義使命」軍演為史上最大規模", "sum": "PBS、Modern Diplomacy報導，2025年12月29-30日中國進行代號「正義使命2025」的大規模軍演模擬封鎖台灣。超過130架軍機及無人機環繞台灣領空，部署驅逐艦、護衛艦、海警船及火箭部隊。軍演在台灣海峽周圍設立七個臨時危險區，影響超過10萬國際旅客。這是地理範圍最大、距台灣最近的軍演，旨在演練快速包圍台灣及阻止日本或美軍基地補給。", "src": "PBS NewsHour / Modern Diplomacy", "sc": "美國/歐洲", "lang": "英文", "url": "https://www.pbs.org/newshour/world/china-announces-it-successfully-completed-taiwan-military-maneuvers", "imp": 8, "why": "解放軍對台軍演規模創紀錄", "date": "2025-12-31", "responses": [{"side": "cn", "who": "習近平", "txt": "兩岸同胞血濃於水，祖國統一是時代潮流，不可阻擋"}, {"side": "jp", "who": "日本外務省", "txt": "中國在台灣周邊軍演是升級台海緊張的行為，已向北京表達關切"}, {"side": "other", "who": "菲律賓國防部長Teodoro", "txt": "對中國在台灣周邊軍事及海警行動深感擔憂，破壞本已脆弱地緣環境的穩定}"}]}, {"rank": 6, "isNew": false, "title": "台灣在2026年經濟自由指數排名全球第五", "sum": "台灣政府報告顯示，根據華府智庫傳統基金會3月10日發布的2026年經濟自由指數，台灣排名全球第五。國家發展委員會指出這反映台灣持續的經濟改革及市場開放成果。此外，賴清德總統今年3月會見美國半導體產業協會（SIA）代表團，討論深化科技合作。2月台灣出口達498億美元，較去年同期成長20.6%，貿易順差達127.7億美元。", "src": "Heritage Foundation (via Taiwan government)", "sc": "美國", "lang": "英文", "url": "https://www.taiwan.gov.tw/news.php", "imp": 6, "why": "台灣國際經濟地位獲肯定", "date": "2026-03-10", "responses": [{"side": "tw", "who": "國家發展委員會", "txt": "台灣在傳統基金會2026年經濟自由指數排名全球第五"}, {"side": "tw", "who": "賴清德總統", "txt": "（3月2日會見美國半導體產業協會代表團）"}, {"side": "analyst", "who": "傳統基金會", "txt": "台灣經濟自由度持續領先亞太地區多數經濟體}"}]}]}];
+const TODAY_DATE='2026-04-03';
+const AVAILABLE_DATES=["2026-04-03"];
+
+let currentTab=0;
+
+function renderNews(categories){
+  const nb=document.getElementById('nb');
+  nb.innerHTML='';
+  categories.forEach(cat=>{
+    const s=document.createElement('div');
+    s.className='cs'+(cat.id===currentTab?' on':'');
+    s.dataset.c=cat.id;
+    const cards=(cat.news||[]).map((n,i)=>{
+      const resp=(n.responses||[]).map(r=>`<div class="resp-item"><div class="resp-flag">${FLAG[r.side]||'⚪'}</div><div><div class="resp-who ${r.side}">${r.who}</div><div class="resp-txt">${r.txt}</div></div></div>`).join('');
+      const srcLink=n.url?`<a class="src-link" href="${n.url}" target="_blank" rel="noopener">🔗 閱讀原文</a>`:'';
+      return `<div class="card"><div class="card-body" onclick="toggleResp(this)">${n.isNew?'<span class="new-tag">TODAY</span>':''}<div class="ct2"><div class="rk">#${n.rank||i+1}</div><div class="nt">${n.title}</div></div><div class="ib" style="width:${(n.imp||5)*10}%"></div><div class="ns">${n.sum}</div><div class="nm"><span class="mt">📰 ${n.src}</span><span class="mt">· ${n.sc}</span><span class="mt">· ${n.date}</span><span class="it">重要性 ${n.imp}/10 · ${n.why}</span></div>${srcLink}<button class="toggle-resp" onclick="event.stopPropagation();toggleResp(this.closest('.card-body'))"><span class="toggle-arrow">▶</span> 各方回應 (${(n.responses||[]).length})</button></div><div class="resp-panel"><div class="resp-title">// 各方回應</div>${resp}</div></div>`;
+    }).join('');
+    s.innerHTML=`<div class="ch"><div class="cn">0${cat.id+1}</div><div><div class="cl">主題 ${cat.id+1}</div><div class="ct">${cat.theme}</div></div></div><div class="nl">${cards}</div>`;
+    nb.appendChild(s);
+  });
+  document.querySelectorAll('.tab').forEach(b=>{
+    b.addEventListener('click',()=>{
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');
+      currentTab=parseInt(b.dataset.t);
+      document.querySelectorAll('.cs').forEach(s=>{s.classList.toggle('on',parseInt(s.dataset.c)===currentTab);});
+    });
+  });
 }
+
+async function loadDate(dateStr){
+  if(dateStr===TODAY_DATE){
+    document.getElementById('analysisText').textContent='國際對台關注度持續升溫。美國參議員訪台施壓國防預算，國民黨主席鄭麗文將於4月7日訪中會習近平，川普-習近平峰會延至5月舉行，美情報機構評估中國無固定侵台時間表。中日緊張升級，北京制裁訪台日本議員古屋圭司。台積電宣布日本3奈米廠計劃，立陶宛尋求深化與台經濟合作。';
+    document.getElementById('dateLabel').textContent='2026年04月03日';
+    document.getElementById('breakingText').textContent='美國情報機構評估：中國無2027年侵台計劃，但解放軍持續增強對台軍事能力';
+    renderNews(TODAY_DATA);
+    updateBtns(dateStr);
+    document.getElementById('dateSelect').value=dateStr;
+    return;
+  }
+  document.getElementById('loadingBar').classList.add('on');
+  document.getElementById('mainContent').style.opacity='0.3';
+  try{
+    const res=await fetch(`news/${dateStr}.json`);
+    if(!res.ok)throw new Error('找不到資料');
+    const data=await res.json();
+    document.getElementById('analysisText').textContent=data.overallAnalysis||'';
+    document.getElementById('dateLabel').textContent=data.date||dateStr;
+    document.getElementById('breakingText').textContent=data.breakingNews||'';
+    renderNews(data.categories||[]);
+    updateBtns(dateStr);
+    document.getElementById('dateSelect').value=dateStr;
+  }catch(e){
+    alert('載入失敗：'+e.message);
+  }finally{
+    document.getElementById('loadingBar').classList.remove('on');
+    document.getElementById('mainContent').style.opacity='1';
+  }
+}
+
+function updateBtns(activeDate){
+  const container=document.getElementById('dateBtns');
+  container.innerHTML='';
+  const recent=AVAILABLE_DATES.slice(0,5);
+  recent.forEach(d=>{
+    const btn=document.createElement('button');
+    btn.className='date-btn'+(d===activeDate?' active':'');
+    try{
+      const dt=new Date(d);
+      btn.textContent=(dt.getMonth()+1)+'/'+(dt.getDate());
+    }catch{btn.textContent=d;}
+    btn.onclick=()=>loadDate(d);
+    container.appendChild(btn);
+  });
+}
+
 function toggleResp(body){
-const btn=body.querySelector('.toggle-resp');
-const panel=body.nextElementSibling;
-const isOpen=panel.classList.contains('open');
-panel.classList.toggle('open',!isOpen);
-btn.classList.toggle('open',!isOpen);
+  const btn=body.querySelector('.toggle-resp');
+  const panel=body.nextElementSibling;
+  const isOpen=panel.classList.contains('open');
+  panel.classList.toggle('open',!isOpen);
+  btn.classList.toggle('open',!isOpen);
 }
-document.querySelectorAll('.tab').forEach(b=>{
-b.addEventListener('click',()=>{
-document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
-b.classList.add('on');
-const t=parseInt(b.dataset.t);
-document.querySelectorAll('.cs').forEach(s=>{s.classList.toggle('on',parseInt(s.dataset.c)===t);});
-});
-});
-render();
+
+renderNews(TODAY_DATA);
+updateBtns(TODAY_DATE);
 </script>
 </body>
 </html>
