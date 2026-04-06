@@ -42,7 +42,7 @@ side只能用：tw、us、cn、jp、eu、analyst、other"""
     for i in range(8):
         print(f"第 {i+1} 輪...")
         response = client.messages.create(
-            model="claude-haiku-4-5-20251101",
+            model="claude-haiku-4-5-20251001",
             max_tokens=8000,
             tools=[{"type": "web_search_20250305", "name": "web_search"}],
             messages=messages
