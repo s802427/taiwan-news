@@ -10,7 +10,7 @@ client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
 def fetch_news():
     today = datetime.now(TW).strftime("%Y年%m月%d日")
-    prompt = f"""你是專業國際新聞分析師。今天是{today}，請用網路搜尋工具搜尋過去24小時內真實存在的國際新聞。
+    prompt = f"""你是專業國際新聞分析師。今天是{today}，請用網路搜尋工具搜尋過去24小時內的國際新聞。
 
 搜尋策略：
 1. 搜尋 "Taiwan news today {datetime.now(TW).strftime('%Y %m %d')}"
@@ -23,18 +23,18 @@ def fetch_news():
 2. 全球對台灣事務的評論（國際媒體/智庫/學者評論）
 3. 台灣在國際舞台上的角色（科技/外交/軍事/文化參與）
 
-嚴格規則：
-- 只引用真實存在的非台灣媒體報導
-- 每則新聞必須提供真實的原文網址（url欄位）
+規則：
+- 只引用非台灣媒體報導
+- 每則新聞提供原文網址（url欄位）
 - 不引用繁體中文原始來源
-- 不重複同一事件
-- 每主題6則，依重要程度排序
+- 每主題最多6則，依重要程度排序
 - 重要程度1-10分
-- 摘要必須包含具體數字、人名、機構名稱
-- 如果某主題24小時內真的沒有足夠新聞，寧可少於6則也不要捏造
+- 摘要包含具體數字、人名、機構名稱
+
+絕對重要：無論新聞多少，都必須回傳純JSON，不得回傳任何說明文字或拒絕回應。新聞不足時回傳現有的，每主題可以少於6則，但格式必須是完整JSON。
 
 請只回傳純JSON：
-{{"date":"{today}","overallAnalysis":"總體分析120字以內","breakingNews":"今日最重要一句話","categories":[{{"id":0,"theme":"全球對台政策","news":[{{"rank":1,"isNew":true,"title":"標題（繁體中文）","sum":"摘要100-150字","src":"來源媒體","sc":"來源國家","lang":"原文語言","url":"原文網址","imp":9,"why":"重要性說明20字內","date":"發布日期","responses":[{{"side":"us","who":"人名/機構","txt":"回應內容"}},{{"side":"cn","who":"人名/機構","txt":"回應內容"}},{{"side":"analyst","who":"分析師/智庫","txt":"分析內容"}}]}}]}},{{"id":1,"theme":"全球對台灣事務的評論","news":[]}},{{"id":2,"theme":"台灣在國際舞台上的角色","news":[]}}]}}
+{{"date":"{today}","overallAnalysis":"總體分析120字以內","breakingNews":"今日最重要一句話","categories":[{{"id":0,"theme":"全球對台政策","news":[{{"rank":1,"isNew":true,"title":"標題（繁體中文）","sum":"摘要100字","src":"來源媒體","sc":"來源國家","lang":"原文語言","url":"原文網址","imp":9,"why":"重要性20字內","date":"發布日期","responses":[{{"side":"us","who":"人名/機構","txt":"回應內容"}},{{"side":"cn","who":"人名/機構","txt":"回應內容"}},{{"side":"analyst","who":"分析師/智庫","txt":"分析內容"}}]}}]}},{{"id":1,"theme":"全球對台灣事務的評論","news":[]}},{{"id":2,"theme":"台灣在國際舞台上的角色","news":[]}}]}}
 
 side只能用：tw、us、cn、jp、eu、analyst、other"""
 
